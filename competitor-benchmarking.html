@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competitor Price Intelligence — ProfitCalc</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  /* ── Stripe / Linear / Vercel design system ── */
+  :root {
+    --bg:        #ffffff;
+    --bg2:       #f9fafb;
+    --bg3:       #f3f4f6;
+    --surface:   #ffffff;
+    --border:    #e5e7eb;
+    --border2:   #d1d5db;
+    --primary:   #635bff;
+    --primary-h: #4f46e5;
+    --primary-s: #ede9fe;
+    --primary-t: rgba(99,91,255,0.08);
+    --green:     #10b981;
+    --green-s:   #d1fae5;
+    --red:       #ef4444;
+    --red-s:     #fee2e2;
+    --amber:     #f59e0b;
+    --amber-s:   #fef3c7;
+    --blue:      #3b82f6;
+    --blue-s:    #dbeafe;
+    --text:      #111827;
+    --text2:     #374151;
+    --text3:     #6b7280;
+    --text4:     #9ca3af;
+    --radius:    12px;
+    --radius-lg: 20px;
+    --shadow:    0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.07),0 4px 6px rgba(0,0,0,0.05);
+    --font: 'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg2);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+  /* TOPBAR */
+  .topbar{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+  .topbar-inner{max-width:1080px;margin:0 auto;padding:0 1.5rem;height:60px;display:flex;align-items:center;gap:0.75rem;}
+  .logo-mark{width:32px;height:32px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.82rem;color:white;letter-spacing:-0.03em;flex-shrink:0;}
+  .logo-text{font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-0.02em;}
+  .logo-text span{color:var(--primary);}
+  .topbar-gap{flex:1;}
+
+  /* LANGUAGE BUTTON */
+  .lang-wrap{position:relative;}
+  .lang-btn{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:10px;padding:7px 14px;font-family:var(--font);font-size:0.82rem;font-weight:600;color:var(--text2);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+  .lang-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-s);}
+  .lang-btn .chevron{font-size:0.6rem;color:var(--text4);margin-left:2px;transition:transform 0.2s;display:inline-block;}
+  .lang-btn.open .chevron{transform:rotate(180deg);}
+  .lang-dd{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);min-width:210px;overflow:hidden;z-index:300;}
+  .lang-dd.open{display:block;animation:dropIn 0.15s ease;}
+  @keyframes dropIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .lang-opt{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background 0.1s;font-size:0.84rem;color:var(--text2);}
+  .lang-opt:hover{background:var(--bg2);}
+  .lang-opt.active{background:var(--primary-t);color:var(--primary);font-weight:600;}
+  .lang-opt .flag{font-size:1.05rem;}
+  .lang-opt .lname{font-weight:600;}
+  .lang-opt .lnat{color:var(--text4);font-size:0.77rem;margin-left:auto;}
+  .lang-divider{height:1px;background:var(--border);}
+
+  /* WRAP */
+  .wrap{max-width:1080px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+
+  /* HERO */
+  .hero{text-align:center;padding:3rem 0 2.5rem;}
+  .hero-pill{display:inline-flex;align-items:center;gap:6px;background:var(--primary-s);color:var(--primary);border:1px solid rgba(99,91,255,0.2);border-radius:50px;padding:5px 14px;font-size:0.74rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.25rem;}
+  .hero-dot{width:6px;height:6px;background:var(--primary);border-radius:50%;animation:blink 1.6s infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-0.04em;line-height:1.1;color:var(--text);margin-bottom:1rem;}
+  .hero h1 em{font-style:normal;color:var(--primary);}
+  .hero p{font-size:1rem;color:var(--text3);max-width:520px;margin:0 auto;}
+
+  /* CARD */
+  .card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);}
+  .card-head{padding:1.5rem 1.75rem 0;display:flex;align-items:center;gap:0.75rem;}
+  .card-ico{width:36px;height:36px;border-radius:10px;background:var(--primary-s);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+  .card-title{font-weight:700;font-size:0.95rem;color:var(--text);}
+  .card-sub{font-size:0.78rem;color:var(--text3);}
+  .card-body{padding:1.5rem 1.75rem;}
+
+  /* FIELDS */
+  .fg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+  @media(max-width:720px){.fg{grid-template-columns:1fr 1fr;}}
+  @media(max-width:480px){.fg{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:0.78rem;font-weight:600;color:var(--text2);}
+  .inp-w{position:relative;}
+  .inp-pre{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:0.88rem;color:var(--text3);font-weight:500;pointer-events:none;}
+  .field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--text);font-family:var(--font);font-size:0.9rem;font-weight:500;transition:border-color 0.15s,box-shadow 0.15s;-webkit-appearance:none;}
+  .field input.pre{padding-left:28px;}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,91,255,0.12);}
+  .field input::placeholder{color:var(--text4);}
+
+  /* ANALYSE BTN */
+  .abtn{width:100%;margin-top:1.25rem;background:var(--primary);color:white;border:none;border-radius:var(--radius);padding:13px;font-family:var(--font);font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(99,91,255,0.35);letter-spacing:-0.01em;}
+  .abtn:hover{background:var(--primary-h);transform:translateY(-1px);box-shadow:0 4px 14px rgba(99,91,255,0.4);}
+  .abtn:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none;}
+
+  /* LOADING */
+  .loading-state{display:none;}
+  .loading-state.active{display:block;}
+  .loading-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem;text-align:center;margin-top:1.5rem;}
+  .spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.25rem;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .load-title{font-weight:700;font-size:1.1rem;color:var(--text);margin-bottom:0.25rem;}
+  .load-sub{font-size:0.85rem;color:var(--text3);margin-bottom:1.5rem;}
+  .steps{display:flex;flex-direction:column;gap:6px;max-width:340px;margin:0 auto;text-align:left;}
+  .step{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;font-size:0.83rem;color:var(--text3);background:var(--bg2);border:1px solid var(--border);transition:all 0.3s;}
+  .step.active{color:var(--primary);background:var(--primary-s);border-color:rgba(99,91,255,0.25);font-weight:600;}
+  .step.done{color:var(--green);background:var(--green-s);border-color:rgba(16,185,129,0.25);}
+
+  /* RESULTS */
+  .results{display:none;margin-top:1.5rem;}
+  .results.active{display:flex;flex-direction:column;gap:1.25rem;}
+
+  /* POSITION BANNER */
+  .pos-banner{border-radius:var(--radius-lg);padding:2rem 2rem 1.75rem;position:relative;overflow:hidden;}
+  .pos-banner.underpriced{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #bfdbfe;}
+  .pos-banner.competitive{background:linear-gradient(135deg,#f0fdf4,#d1fae5);border:1.5px solid #a7f3d0;}
+  .pos-banner.premium{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;}
+  .pos-banner.overpriced{background:linear-gradient(135deg,#fff1f2,#fee2e2);border:1.5px solid #fecaca;}
+  .pos-eyebrow{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;opacity:0.6;margin-bottom:0.4rem;}
+  .pos-heading{font-size:1.9rem;font-weight:800;letter-spacing:-0.04em;line-height:1;margin-bottom:0.5rem;}
+  .pos-desc{font-size:0.88rem;opacity:0.75;max-width:520px;}
+  .pos-banner.underpriced .pos-heading{color:#1d4ed8;}
+  .pos-banner.competitive .pos-heading{color:#065f46;}
+  .pos-banner.premium .pos-heading{color:#92400e;}
+  .pos-banner.overpriced .pos-heading{color:#991b1b;}
+
+  /* TRACK BAR */
+  .track-section{margin-top:1.5rem;}
+  .track-lbl{font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:0.75rem;}
+  .track{position:relative;height:52px;}
+  .track-bg{position:absolute;top:50%;transform:translateY(-50%);left:0;right:0;height:8px;background:rgba(0,0,0,0.08);border-radius:4px;}
+  .track-fill{position:absolute;top:50%;transform:translateY(-50%);height:8px;border-radius:4px;background:rgba(0,0,0,0.16);}
+  .track-pin{position:absolute;top:0;transform:translateX(-50%);transition:left 0.8s ease;}
+  .track-pin-line{width:2px;height:52px;background:rgba(0,0,0,0.45);border-radius:1px;margin:0 auto;}
+  .track-pin-lbl{font-size:0.68rem;font-weight:700;white-space:nowrap;text-align:center;opacity:0.6;margin-top:-17px;}
+  .track-pin-val{font-size:0.8rem;font-weight:800;white-space:nowrap;text-align:center;margin-top:2px;}
+  .track-ends{display:flex;justify-content:space-between;font-size:0.72rem;font-weight:600;opacity:0.5;margin-top:4px;}
+
+  /* METRICS */
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+  @media(max-width:700px){.metrics{grid-template-columns:1fr 1fr;}}
+  .mtile{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;box-shadow:var(--shadow);}
+  .mt-lbl{font-size:0.7rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;}
+  .mt-val{font-size:1.6rem;font-weight:800;letter-spacing:-0.03em;line-height:1;}
+  .mt-val.indigo{color:var(--primary);}
+  .mt-val.green{color:var(--green);}
+  .mt-val.amber{color:var(--amber);}
+  .mt-val.blue{color:var(--blue);}
+  .mt-sub{font-size:0.74rem;color:var(--text3);margin-top:4px;}
+
+  /* TABLE */
+  .ptable{width:100%;border-collapse:collapse;}
+  .ptable th{text-align:left;padding:0 1.5rem 0.75rem;font-size:0.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1.5px solid var(--border);}
+  .ptable td{padding:0.9rem 1.5rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+  .ptable tr:last-child td{border-bottom:none;}
+  .ptable tbody tr:hover td{background:var(--bg2);}
+  .pname-cell{display:flex;align-items:center;gap:10px;}
+  .pav{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;border:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+  .pn{font-weight:600;font-size:0.88rem;}
+  .prange{font-size:0.85rem;color:var(--text3);font-weight:500;}
+  .pavg{font-size:0.92rem;font-weight:700;}
+  .badge{display:inline-flex;align-items:center;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:50px;white-space:nowrap;}
+  .badge.g{background:var(--green-s);color:#065f46;}
+  .badge.b{background:var(--blue-s);color:#1d4ed8;}
+  .badge.r{background:var(--red-s);color:#991b1b;}
+
+  /* CHART */
+  .chart-wrap{position:relative;height:240px;}
+
+  /* STRATEGIES */
+  .sg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+  @media(max-width:650px){.sg{grid-template-columns:1fr;}}
+  .stile{border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;background:var(--surface);cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow);}
+  .stile:hover{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,91,255,0.08);transform:translateY(-2px);}
+  .stag{display:inline-block;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 9px;border-radius:6px;margin-bottom:0.75rem;}
+  .stag.v{background:var(--blue-s);color:#1d4ed8;}
+  .stag.b{background:var(--green-s);color:#065f46;}
+  .stag.p{background:var(--amber-s);color:#92400e;}
+  .st-title{font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:0.4rem;}
+  .st-body{font-size:0.8rem;color:var(--text3);line-height:1.6;}
+  .st-price{font-size:1.1rem;font-weight:800;color:var(--primary);margin-top:0.75rem;}
+
+  /* AI */
+  .ai-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
+  .ai-head{padding:1.25rem 1.75rem;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:0.75rem;background:linear-gradient(to right,#f5f3ff,#ede9fe);}
+  .ai-ava{width:38px;height:38px;background:var(--primary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+  .ai-htitle{font-weight:700;font-size:0.95rem;color:var(--text);}
+  .ai-hsub{font-size:0.75rem;color:var(--text3);}
+  .ai-body{padding:1.5rem 1.75rem;}
+  .ai-content{font-size:0.88rem;line-height:1.85;color:var(--text2);}
+  .ai-content p{margin-bottom:0.75rem;}
+  .ai-content p:last-child{margin-bottom:0;}
+  .ai-content strong{color:var(--text);font-weight:700;}
+  .ai-spin{display:flex;align-items:center;gap:10px;color:var(--text3);font-size:0.85rem;}
+  .mini-spin{width:14px;height:14px;border:2px solid rgba(99,91,255,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;}
+
+  /* SEC LABEL */
+  .sec-lbl{font-size:0.72rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;}
+  .sec-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* TOAST */
+  #toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:white;padding:10px 18px;border-radius:12px;font-size:0.82rem;font-weight:600;box-shadow:var(--shadow-lg);transform:translateY(60px);opacity:0;transition:all 0.25s;z-index:9999;}
+  #toast.show{transform:translateY(0);opacity:1;}
+
+  /* FADE */
+  .fu{opacity:0;transform:translateY(16px);animation:fuAnim 0.4s ease forwards;}
+  @keyframes fuAnim{to{opacity:1;transform:translateY(0);}}
+  .d1{animation-delay:0.05s}.d2{animation-delay:0.1s}.d3{animation-delay:0.15s}.d4{animation-delay:0.2s}.d5{animation-delay:0.25s}.d6{animation-delay:0.3s}
+
+  ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+  select option{background:#fff;color:#111;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="topbar-inner">
+    <div class="logo-mark">PC</div>
+    <div class="logo-text">Profit<span>Calc</span></div>
+    <div class="topbar-gap"></div>
+
+    <div class="lang-wrap">
+      <button class="lang-btn" id="lang-btn" onclick="toggleLang()">
+        🌐 <span id="lang-cur">English</span> <span class="chevron">▼</span>
+      </button>
+      <div class="lang-dd" id="lang-dd">
+        <div class="lang-opt active" onclick="setLang('en')"><span class="flag">🇬🇧</span><span class="lname">English</span><span class="lnat">English</span></div>
+        <div class="lang-divider"></div>
+        <div class="lang-opt" onclick="setLang('hi')"><span class="flag">🇮🇳</span><span class="lname">Hindi</span><span class="lnat">हिन्दी</span></div>
+        <div class="lang-opt" onclick="setLang('mr')"><span class="flag">🇮🇳</span><span class="lname">Marathi</span><span class="lnat">मराठी</span></div>
+        <div class="lang-opt" onclick="setLang('ta')"><span class="flag">🇮🇳</span><span class="lname">Tamil</span><span class="lnat">தமிழ்</span></div>
+        <div class="lang-opt" onclick="setLang('te')"><span class="flag">🇮🇳</span><span class="lname">Telugu</span><span class="lnat">తెలుగు</span></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-pill"><div class="hero-dot"></div><span data-t="pill">AI-Powered · For Indian Sellers</span></div>
+    <h1><span data-t="h1a">Competitor Price</span><br><em data-t="h1b">Intelligence</em></h1>
+    <p data-t="hero-sub">Know exactly what competitors charge on Amazon, Meesho & Flipkart — and get AI-recommended pricing to maximise your profit.</p>
+  </div>
+
+  <!-- INPUT -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-ico">🔍</div>
+      <div><div class="card-title" data-t="input-title">Your Product Details</div><div class="card-sub" data-t="input-sub">Fill in the details to get your analysis</div></div>
+    </div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="field" style="grid-column:span 2">
+          <label data-t="lbl-cat">Product Category</label>
+          <select id="i-category">
+            <option value="" data-t="opt-sel">Select a category...</option>
+            <optgroup label="Fashion & Lifestyle">
+              <option>Handmade Jewellery</option><option>Leather Bags & Wallets</option>
+              <option>Sarees & Ethnic Wear</option><option>T-Shirts & Casual Wear</option>
+              <option>Footwear & Sandals</option><option>Sunglasses & Accessories</option>
+            </optgroup>
+            <optgroup label="Food & Kitchen">
+              <option>Homemade Pickles & Achaar</option><option>Spices & Masala Blends</option>
+              <option>Dry Fruits & Nuts</option><option>Sweets & Mithai</option>
+              <option>Organic Honey</option><option>Home Baked Cookies</option>
+            </optgroup>
+            <optgroup label="Beauty & Care">
+              <option>Handmade Soaps</option><option>Natural Hair Oils</option>
+              <option>Skincare & Face Packs</option><option>Lip Balms & Candles</option>
+            </optgroup>
+            <optgroup label="Home & Decor">
+              <option>Handmade Candles</option><option>Terracotta & Pottery</option>
+              <option>Wooden Handicrafts</option><option>Wall Art & Paintings</option>
+              <option>Bamboo Products</option>
+            </optgroup>
+            <optgroup label="Electronics">
+              <option>Phone Cases & Covers</option><option>USB Cables & Accessories</option>
+              <option>Smart Home Gadgets</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Stationery & Notebooks</option><option>Toys & Games</option>
+              <option>Pet Products</option><option>Other Product</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field">
+          <label data-t="lbl-prod">Product Name</label>
+          <input type="text" id="i-product" placeholder="e.g. Mango Pickle 500g">
+        </div>
+        <div class="field">
+          <label data-t="lbl-price">Your Selling Price</label>
+          <div class="inp-w"><span class="inp-pre">₹</span><input type="number" id="i-price" class="pre" placeholder="0" value="150"></div>
+        </div>
+        <div class="field">
+          <label data-t="lbl-cost">Your Cost Per Unit</label>
+          <div class="inp-w"><span class="inp-pre">₹</span><input type="number" id="i-cost" class="pre" placeholder="0" value="75"></div>
+        </div>
+        <div class="field">
+          <label data-t="lbl-mkt">Target Market</label>
+          <select id="i-market">
+            <option data-t="mkt-b">Budget buyers (₹50–200)</option>
+            <option selected data-t="mkt-m">Mid-range (₹200–800)</option>
+            <option data-t="mkt-p">Premium (₹800–3000)</option>
+            <option data-t="mkt-l">Luxury (₹3000+)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-t="lbl-ch">Sales Channel</label>
+          <select id="i-channel">
+            <option data-t="ch-wa">WhatsApp & Instagram</option>
+            <option selected data-t="ch-mkt">Meesho / Amazon</option>
+            <option data-t="ch-local">Local Market / Dukan</option>
+            <option data-t="ch-web">Own Website</option>
+            <option data-t="ch-all">All Channels</option>
+          </select>
+        </div>
+      </div>
+      <button class="abtn" id="abtn" onclick="runAnalysis()">
+        <span>✦</span><span id="btn-txt" data-t="btn-analyse">Analyse My Pricing</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-state" id="loading">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <div class="load-title" data-t="load-title">Scanning the Market</div>
+      <div class="load-sub" data-t="load-sub">Comparing prices across all major platforms...</div>
+      <div class="steps">
+        <div class="step" id="st1"><span>🔍</span><span data-t="s1">Scanning Amazon India</span></div>
+        <div class="step" id="st2"><span>📦</span><span data-t="s2">Checking Meesho & Flipkart</span></div>
+        <div class="step" id="st3"><span>📊</span><span data-t="s3">Calculating benchmarks</span></div>
+        <div class="step" id="st4"><span>🧠</span><span data-t="s4">AI generating strategy</span></div>
+        <div class="step" id="st5"><span>✅</span><span data-t="s5">Building your report</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+
+    <div class="pos-banner competitive fu d1" id="pos-banner">
+      <div class="pos-eyebrow" data-t="pos-ey">Your Market Position</div>
+      <div class="pos-heading" id="pos-heading">COMPETITIVELY PRICED</div>
+      <div class="pos-desc" id="pos-desc"></div>
+      <div class="track-section">
+        <div class="track-lbl" data-t="track-lbl">Your price vs market range</div>
+        <div class="track">
+          <div class="track-bg"></div>
+          <div class="track-fill" id="track-fill" style="left:0;width:100%"></div>
+          <div class="track-pin" id="track-pin">
+            <div class="track-pin-lbl">Your Price</div>
+            <div class="track-pin-line"></div>
+            <div class="track-pin-val" id="pin-val">₹0</div>
+          </div>
+        </div>
+        <div class="track-ends"><span id="tr-min">₹0</span><span id="tr-max">₹0</span></div>
+      </div>
+    </div>
+
+    <div class="metrics fu d2">
+      <div class="mtile"><div class="mt-lbl" data-t="mt-avg">Market Average</div><div class="mt-val indigo" id="m-avg">—</div><div class="mt-sub" id="m-avg-s"></div></div>
+      <div class="mtile"><div class="mt-lbl" data-t="mt-opt">AI Optimal Price</div><div class="mt-val amber" id="m-opt">—</div><div class="mt-sub" id="m-opt-s"></div></div>
+      <div class="mtile"><div class="mt-lbl" data-t="mt-prof">Profit at Optimal</div><div class="mt-val green" id="m-prof">—</div><div class="mt-sub" id="m-prof-s"></div></div>
+      <div class="mtile"><div class="mt-lbl" data-t="mt-adj">Price Adjustment</div><div class="mt-val blue" id="m-adj">—</div><div class="mt-sub" id="m-adj-s"></div></div>
+    </div>
+
+    <div class="card fu d3">
+      <div class="card-head">
+        <div class="card-ico">📊</div>
+        <div><div class="card-title" data-t="plat-title">Platform Price Intelligence</div><div class="card-sub" data-t="plat-sub">Average prices across 5 major platforms</div></div>
+      </div>
+      <div class="card-body" style="padding-top:0.5rem">
+        <div style="overflow-x:auto">
+          <table class="ptable">
+            <thead><tr>
+              <th data-t="th-pl">Platform</th>
+              <th data-t="th-rng">Price Range</th>
+              <th data-t="th-avg">Avg Price</th>
+              <th data-t="th-vs">vs Your Price</th>
+            </tr></thead>
+            <tbody id="plat-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fu d4">
+      <div class="card-head">
+        <div class="card-ico">📈</div>
+        <div><div class="card-title" data-t="ch-title">Price Positioning Map</div><div class="card-sub" data-t="ch-sub">How you compare against each platform</div></div>
+      </div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="pchart"></canvas></div></div>
+    </div>
+
+    <div class="fu d5">
+      <div class="sec-lbl" data-t="strat-lbl">Pricing Strategies</div>
+      <div class="sg" id="strat-grid"></div>
+    </div>
+
+    <div class="ai-panel fu d6">
+      <div class="ai-head">
+        <div class="ai-ava">🧠</div>
+        <div><div class="ai-htitle" data-t="ai-title">AI Business Advisor</div><div class="ai-hsub" data-t="ai-sub">Personalised pricing strategy for your product</div></div>
+      </div>
+      <div class="ai-body">
+        <div class="ai-content" id="ai-content">
+          <div class="ai-spin"><div class="mini-spin"></div><span data-t="ai-load">Generating personalised strategy...</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── TRANSLATIONS ──
+const TR = {
+  en:{
+    pill:"AI-Powered · For Indian Sellers",h1a:"Competitor Price",h1b:"Intelligence",
+    "hero-sub":"Know exactly what competitors charge on Amazon, Meesho & Flipkart — and get AI-recommended pricing to maximise your profit.",
+    "input-title":"Your Product Details","input-sub":"Fill in the details to get your analysis",
+    "lbl-cat":"Product Category","opt-sel":"Select a category...",
+    "lbl-prod":"Product Name","lbl-price":"Your Selling Price","lbl-cost":"Your Cost Per Unit",
+    "lbl-mkt":"Target Market","lbl-ch":"Sales Channel",
+    "mkt-b":"Budget buyers (₹50–200)","mkt-m":"Mid-range (₹200–800)","mkt-p":"Premium (₹800–3000)","mkt-l":"Luxury (₹3000+)",
+    "ch-wa":"WhatsApp & Instagram","ch-mkt":"Meesho / Amazon","ch-local":"Local Market / Dukan","ch-web":"Own Website","ch-all":"All Channels",
+    "btn-analyse":"Analyse My Pricing",
+    "load-title":"Scanning the Market","load-sub":"Comparing prices across all major platforms...",
+    s1:"Scanning Amazon India",s2:"Checking Meesho & Flipkart",s3:"Calculating benchmarks",s4:"AI generating strategy",s5:"Building your report",
+    "pos-ey":"Your Market Position","track-lbl":"Your price vs market range",
+    "mt-avg":"Market Average","mt-opt":"AI Optimal Price","mt-prof":"Profit at Optimal","mt-adj":"Price Adjustment",
+    "plat-title":"Platform Price Intelligence","plat-sub":"Average prices across 5 major platforms",
+    "th-pl":"Platform","th-rng":"Price Range","th-avg":"Avg Price","th-vs":"vs Your Price",
+    "ch-title":"Price Positioning Map","ch-sub":"How you compare against each platform",
+    "strat-lbl":"Pricing Strategies",
+    "ai-title":"AI Business Advisor","ai-sub":"Personalised pricing strategy for your product","ai-load":"Generating personalised strategy...",
+    "b-cheap":"You're cheaper","b-fair":"Competitive","b-high":"You're costlier",
+    "sv":"HIGH VOLUME","sb":"BALANCED","sp":"HIGH MARGIN",
+    "svt":"Penetration Price","sbt":"Market Match Price","spt":"Premium Price",
+    "t-cat":"Please select a product category","t-price":"Please enter your price and cost",
+  },
+  hi:{
+    pill:"AI संचालित · भारतीय विक्रेताओं के लिए",h1a:"प्रतियोगी मूल्य",h1b:"विश्लेषण",
+    "hero-sub":"जानें कि Amazon, Meesho और Flipkart पर प्रतियोगी क्या चार्ज करते हैं — और AI की अनुशंसित कीमत पाएं।",
+    "input-title":"आपके उत्पाद की जानकारी","input-sub":"नीचे विवरण भरें और विश्लेषण प्राप्त करें",
+    "lbl-cat":"उत्पाद श्रेणी","opt-sel":"श्रेणी चुनें...",
+    "lbl-prod":"उत्पाद का नाम","lbl-price":"आपकी बिक्री कीमत","lbl-cost":"प्रति यूनिट लागत",
+    "lbl-mkt":"लक्षित बाजार","lbl-ch":"बिक्री चैनल",
+    "mkt-b":"बजट खरीदार (₹50–200)","mkt-m":"मध्यम वर्ग (₹200–800)","mkt-p":"प्रीमियम (₹800–3000)","mkt-l":"लग्जरी (₹3000+)",
+    "ch-wa":"WhatsApp और Instagram","ch-mkt":"Meesho / Amazon","ch-local":"स्थानीय बाजार / दुकान","ch-web":"अपनी वेबसाइट","ch-all":"सभी चैनल",
+    "btn-analyse":"मेरी कीमत का विश्लेषण करें",
+    "load-title":"बाजार स्कैन हो रहा है","load-sub":"सभी प्रमुख प्लेटफार्मों पर कीमतें जांची जा रही हैं...",
+    s1:"Amazon India स्कैन हो रहा है",s2:"Meesho और Flipkart जांचे जा रहे हैं",s3:"बेंचमार्क की गणना",s4:"AI रणनीति बना रही है",s5:"रिपोर्ट तैयार हो रही है",
+    "pos-ey":"बाजार में आपकी स्थिति","track-lbl":"आपकी कीमत बनाम बाजार सीमा",
+    "mt-avg":"बाजार औसत","mt-opt":"AI अनुशंसित कीमत","mt-prof":"सर्वोत्तम कीमत पर लाभ","mt-adj":"कीमत समायोजन",
+    "plat-title":"प्लेटफॉर्म मूल्य जानकारी","plat-sub":"5 प्रमुख प्लेटफार्मों पर औसत कीमतें",
+    "th-pl":"प्लेटफॉर्म","th-rng":"कीमत सीमा","th-avg":"औसत कीमत","th-vs":"आपकी कीमत से तुलना",
+    "ch-title":"मूल्य स्थिति मानचित्र","ch-sub":"प्रत्येक प्लेटफॉर्म के मुकाबले आपकी स्थिति",
+    "strat-lbl":"मूल्य निर्धारण रणनीतियां",
+    "ai-title":"AI बिजनेस सलाहकार","ai-sub":"आपके उत्पाद के लिए व्यक्तिगत रणनीति","ai-load":"व्यक्तिगत रणनीति तैयार हो रही है...",
+    "b-cheap":"आप सस्ते हैं","b-fair":"प्रतिस्पर्धी","b-high":"आप महंगे हैं",
+    sv:"अधिक बिक्री",sb:"संतुलित",sp:"अधिक मार्जिन",
+    svt:"प्रवेश मूल्य",sbt:"बाजार मूल्य",spt:"प्रीमियम मूल्य",
+    "t-cat":"कृपया उत्पाद श्रेणी चुनें","t-price":"कृपया अपनी कीमत और लागत दर्ज करें",
+  },
+  mr:{
+    pill:"AI चालित · भारतीय विक्रेत्यांसाठी",h1a:"स्पर्धक किंमत",h1b:"विश्लेषण",
+    "hero-sub":"Amazon, Meesho आणि Flipkart वर तुमचे स्पर्धक किती आकारतात ते जाणा — आणि AI शिफारस मिळवा.",
+    "input-title":"तुमच्या उत्पादनाची माहिती","input-sub":"विश्लेषण मिळवण्यासाठी खाली भरा",
+    "lbl-cat":"उत्पादन श्रेणी","opt-sel":"श्रेणी निवडा...",
+    "lbl-prod":"उत्पादनाचे नाव","lbl-price":"तुमची विक्री किंमत","lbl-cost":"प्रति युनिट खर्च",
+    "lbl-mkt":"लक्ष्य बाजार","lbl-ch":"विक्री चॅनेल",
+    "mkt-b":"बजेट (₹50–200)","mkt-m":"मध्यम वर्ग (₹200–800)","mkt-p":"प्रीमियम (₹800–3000)","mkt-l":"लक्झरी (₹3000+)",
+    "ch-wa":"WhatsApp आणि Instagram","ch-mkt":"Meesho / Amazon","ch-local":"स्थानिक बाजार / दुकान","ch-web":"स्वतःची वेबसाइट","ch-all":"सर्व चॅनेल",
+    "btn-analyse":"माझ्या किंमतीचे विश्लेषण करा",
+    "load-title":"बाजार स्कॅन होत आहे","load-sub":"सर्व प्रमुख प्लॅटफॉर्मवर किंमती तपासल्या जात आहेत...",
+    s1:"Amazon India स्कॅन होत आहे",s2:"Meesho आणि Flipkart तपासत आहे",s3:"बेंचमार्क मोजत आहे",s4:"AI धोरण बनवत आहे",s5:"अहवाल तयार होत आहे",
+    "pos-ey":"बाजारातील तुमची स्थिती","track-lbl":"तुमची किंमत विरुद्ध बाजार श्रेणी",
+    "mt-avg":"बाजार सरासरी","mt-opt":"AI शिफारस किंमत","mt-prof":"सर्वोत्तम किंमतीवर नफा","mt-adj":"किंमत समायोजन",
+    "plat-title":"प्लॅटफॉर्म किंमत माहिती","plat-sub":"5 प्रमुख प्लॅटफॉर्मवर सरासरी किंमती",
+    "th-pl":"प्लॅटफॉर्म","th-rng":"किंमत श्रेणी","th-avg":"सरासरी किंमत","th-vs":"तुमच्या किंमतीशी तुलना",
+    "ch-title":"किंमत स्थिती नकाशा","ch-sub":"प्रत्येक प्लॅटफॉर्मशी तुलना",
+    "strat-lbl":"किंमत धोरणे",
+    "ai-title":"AI व्यवसाय सल्लागार","ai-sub":"तुमच्या उत्पादनासाठी वैयक्तिक धोरण","ai-load":"वैयक्तिक धोरण तयार होत आहे...",
+    "b-cheap":"तुम्ही स्वस्त आहात","b-fair":"स्पर्धात्मक","b-high":"तुम्ही महाग आहात",
+    sv:"जास्त विक्री",sb:"संतुलित",sp:"जास्त मार्जिन",
+    svt:"प्रवेश किंमत",sbt:"बाजार किंमत",spt:"प्रीमियम किंमत",
+    "t-cat":"कृपया उत्पादन श्रेणी निवडा","t-price":"कृपया किंमत आणि खर्च नमूद करा",
+  },
+  ta:{
+    pill:"AI இயக்கப்படுகிறது · இந்திய விற்பனையாளர்களுக்கு",h1a:"போட்டியாளர் விலை",h1b:"பகுப்பாய்வு",
+    "hero-sub":"Amazon, Meesho & Flipkart இல் போட்டியாளர்கள் என்ன விலை வைக்கிறார்கள் என்று அறியுங்கள்.",
+    "input-title":"உங்கள் தயாரிப்பு விவரங்கள்","input-sub":"பகுப்பாய்வு பெற கீழே நிரப்பவும்",
+    "lbl-cat":"தயாரிப்பு வகை","opt-sel":"வகையை தேர்ந்தெடுக்கவும்...",
+    "lbl-prod":"தயாரிப்பு பெயர்","lbl-price":"உங்கள் விற்பனை விலை","lbl-cost":"ஒரு யூனிட் செலவு",
+    "lbl-mkt":"இலக்கு சந்தை","lbl-ch":"விற்பனை சேனல்",
+    "mkt-b":"பட்ஜெட் (₹50–200)","mkt-m":"நடுத்தர (₹200–800)","mkt-p":"பிரீமியம் (₹800–3000)","mkt-l":"லக்சரி (₹3000+)",
+    "ch-wa":"WhatsApp & Instagram","ch-mkt":"Meesho / Amazon","ch-local":"உள்ளூர் சந்தை","ch-web":"சொந்த வலைதளம்","ch-all":"அனைத்து சேனல்கள்",
+    "btn-analyse":"என் விலையை பகுப்பாய்வு செய்",
+    "load-title":"சந்தை ஸ்கேன் ஆகிறது","load-sub":"அனைத்து முக்கிய தளங்களிலும் விலைகள் ஒப்பிடப்படுகின்றன...",
+    s1:"Amazon India ஸ்கேன்",s2:"Meesho & Flipkart சரிபார்க்கிறது",s3:"அளவுகோல்கள் கணக்கிடுகிறது",s4:"AI உத்தி உருவாக்குகிறது",s5:"அறிக்கை கட்டமைக்கிறது",
+    "pos-ey":"சந்தையில் உங்கள் நிலை","track-lbl":"உங்கள் விலை vs சந்தை வரம்பு",
+    "mt-avg":"சந்தை சராசரி","mt-opt":"AI பரிந்துரை விலை","mt-prof":"சிறந்த விலையில் லாபம்","mt-adj":"விலை சரிசெய்தல்",
+    "plat-title":"தள விலை தகவல்","plat-sub":"5 முக்கிய தளங்களில் சராசரி விலைகள்",
+    "th-pl":"தளம்","th-rng":"விலை வரம்பு","th-avg":"சராசரி விலை","th-vs":"உங்கள் விலையுடன் ஒப்பீடு",
+    "ch-title":"விலை நிலை வரைபடம்","ch-sub":"ஒவ்வொரு தளத்துடனும் ஒப்பீடு",
+    "strat-lbl":"விலை நிர்ணய உத்திகள்",
+    "ai-title":"AI வணிக ஆலோசகர்","ai-sub":"உங்கள் தயாரிப்பிற்கான தனிப்பட்ட உத்தி","ai-load":"தனிப்பட்ட உத்தி உருவாக்கப்படுகிறது...",
+    "b-cheap":"நீங்கள் மலிவானவர்","b-fair":"போட்டித்தன்மை","b-high":"நீங்கள் விலை அதிகம்",
+    sv:"அதிக விற்பனை",sb:"சமநிலை",sp:"அதிக மார்ஜின்",
+    svt:"ஊடுருவல் விலை",sbt:"சந்தை விலை",spt:"பிரீமியம் விலை",
+    "t-cat":"தயாரிப்பு வகையை தேர்ந்தெடுக்கவும்","t-price":"விலை மற்றும் செலவை உள்ளிடவும்",
+  },
+  te:{
+    pill:"AI ఆధారిత · భారతీయ విక్రేతల కోసం",h1a:"పోటీదారుల ధర",h1b:"విశ్లేషణ",
+    "hero-sub":"Amazon, Meesho & Flipkart లో పోటీదారులు ఏ ధర వసూలు చేస్తున్నారో తెలుసుకోండి.",
+    "input-title":"మీ ఉత్పత్తి వివరాలు","input-sub":"విశ్లేషణ పొందడానికి క్రింద పూరించండి",
+    "lbl-cat":"ఉత్పత్తి వర్గం","opt-sel":"వర్గం ఎంచుకోండి...",
+    "lbl-prod":"ఉత్పత్తి పేరు","lbl-price":"మీ అమ్మకపు ధర","lbl-cost":"యూనిట్ ఖర్చు",
+    "lbl-mkt":"లక్ష్య మార్కెట్","lbl-ch":"అమ్మకపు ఛానెల్",
+    "mkt-b":"బడ్జెట్ (₹50–200)","mkt-m":"మధ్యతరగతి (₹200–800)","mkt-p":"ప్రీమియం (₹800–3000)","mkt-l":"లగ్జరీ (₹3000+)",
+    "ch-wa":"WhatsApp & Instagram","ch-mkt":"Meesho / Amazon","ch-local":"స్థానిక మార్కెట్","ch-web":"సొంత వెబ్‌సైట్","ch-all":"అన్ని ఛానెల్‌లు",
+    "btn-analyse":"నా ధరను విశ్లేషించు",
+    "load-title":"మార్కెట్ స్కాన్ అవుతోంది","load-sub":"అన్ని ప్రధాన వేదికలపై ధరలు పోల్చబడుతున్నాయి...",
+    s1:"Amazon India స్కాన్",s2:"Meesho & Flipkart తనిఖీ",s3:"బెంచ్‌మార్క్‌లు లెక్కిస్తోంది",s4:"AI వ్యూహం రూపొందిస్తోంది",s5:"నివేదిక నిర్మిస్తోంది",
+    "pos-ey":"మార్కెట్‌లో మీ స్థానం","track-lbl":"మీ ధర vs మార్కెట్ పరిధి",
+    "mt-avg":"మార్కెట్ సగటు","mt-opt":"AI సిఫారసు ధర","mt-prof":"అత్యుత్తమ ధరలో లాభం","mt-adj":"ధర సర్దుబాటు",
+    "plat-title":"వేదిక ధర సమాచారం","plat-sub":"5 ప్రధాన వేదికలపై సగటు ధరలు",
+    "th-pl":"వేదిక","th-rng":"ధర పరిధి","th-avg":"సగటు ధర","th-vs":"మీ ధరతో పోలిక",
+    "ch-title":"ధర స్థాన మ్యాప్","ch-sub":"ప్రతి వేదికతో పోలిక",
+    "strat-lbl":"ధర నిర్ణయ వ్యూహాలు",
+    "ai-title":"AI వ్యాపార సలహాదారుడు","ai-sub":"మీ ఉత్పత్తికి వ్యక్తిగత వ్యూహం","ai-load":"వ్యక్తిగత వ్యూహం రూపొందుతోంది...",
+    "b-cheap":"మీరు చౌకగా ఉన్నారు","b-fair":"పోటీగా ఉంది","b-high":"మీరు ఖరీదు ఎక్కువ",
+    sv:"అధిక అమ్మకాలు",sb:"సమతుల్యత",sp:"అధిక మార్జిన్",
+    svt:"చొచ్చుకుపోయే ధర",sbt:"మార్కెట్ ధర",spt:"ప్రీమియం ధర",
+    "t-cat":"దయచేసి ఉత్పత్తి వర్గాన్ని ఎంచుకోండి","t-price":"దయచేసి ధర మరియు ఖర్చు నమోదు చేయండి",
+  }
+};
+
+let lang = 'en';
+function t(k){ return (TR[lang]&&TR[lang][k])||TR.en[k]||k; }
+
+function applyLang(){
+  document.querySelectorAll('[data-t]').forEach(el=>{ el.textContent = t(el.getAttribute('data-t')); });
+  const names = {en:'English',hi:'हिन्दी',mr:'मराठी',ta:'தமிழ்',te:'తెలుగు'};
+  document.getElementById('lang-cur').textContent = names[lang];
+  document.querySelectorAll('.lang-opt').forEach((o,i)=>{
+    o.classList.toggle('active',['en','hi','mr','ta','te'][i]===lang);
+  });
+}
+
+function setLang(l){
+  lang=l; applyLang(); closeLang();
+  const names={en:'Language: English',hi:'भाषा बदली: हिन्दी',mr:'भाषा बदलली: मराठी',ta:'மொழி: தமிழ்',te:'భాష: తెలుగు'};
+  showToast(names[l]);
+}
+function toggleLang(){
+  document.getElementById('lang-btn').classList.toggle('open');
+  document.getElementById('lang-dd').classList.toggle('open');
+}
+function closeLang(){
+  document.getElementById('lang-btn').classList.remove('open');
+  document.getElementById('lang-dd').classList.remove('open');
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.lang-wrap')) closeLang(); });
+
+// ── MARKET DATA ──
+const MD = {
+  "Handmade Jewellery":{a:[299,1499],m:[99,599],f:[199,999],i:[350,2000],e:[400,3000]},
+  "Leather Bags & Wallets":{a:[599,2999],m:[199,899],f:[399,1999],i:[800,4000],e:[1000,6000]},
+  "Sarees & Ethnic Wear":{a:[399,2499],m:[149,699],f:[299,1499],i:[500,3000],e:[700,4000]},
+  "T-Shirts & Casual Wear":{a:[299,999],m:[99,399],f:[199,699],i:[350,1200],e:[400,1500]},
+  "Footwear & Sandals":{a:[299,1299],m:[99,499],f:[199,899],i:[400,1500],e:[500,2000]},
+  "Sunglasses & Accessories":{a:[199,999],m:[79,349],f:[149,699],i:[250,1200],e:[300,1500]},
+  "Homemade Pickles & Achaar":{a:[149,499],m:[79,249],f:[99,349],i:[120,400],e:[200,600]},
+  "Spices & Masala Blends":{a:[99,399],m:[49,199],f:[79,299],i:[100,350],e:[150,500]},
+  "Dry Fruits & Nuts":{a:[299,999],m:[149,499],f:[199,699],i:[250,800],e:[350,1200]},
+  "Sweets & Mithai":{a:[199,799],m:[99,399],f:[149,599],i:[200,700],e:[300,1000]},
+  "Organic Honey":{a:[249,799],m:[99,349],f:[149,499],i:[200,600],e:[300,900]},
+  "Home Baked Cookies":{a:[149,499],m:[79,249],f:[99,349],i:[120,450],e:[200,700]},
+  "Handmade Soaps":{a:[99,399],m:[49,199],f:[79,299],i:[120,500],e:[150,600]},
+  "Natural Hair Oils":{a:[149,599],m:[79,299],f:[99,449],i:[150,600],e:[200,800]},
+  "Skincare & Face Packs":{a:[199,799],m:[99,349],f:[149,599],i:[200,900],e:[250,1200]},
+  "Lip Balms & Candles":{a:[99,349],m:[49,179],f:[79,249],i:[100,400],e:[150,600]},
+  "Handmade Candles":{a:[199,799],m:[79,299],f:[149,549],i:[200,900],e:[250,1200]},
+  "Terracotta & Pottery":{a:[299,1499],m:[99,499],f:[199,999],i:[300,1800],e:[400,2500]},
+  "Wooden Handicrafts":{a:[399,1999],m:[149,699],f:[249,1299],i:[500,2500],e:[600,4000]},
+  "Wall Art & Paintings":{a:[499,2999],m:[199,899],f:[299,1999],i:[600,5000],e:[800,8000]},
+  "Bamboo Products":{a:[199,999],m:[79,349],f:[149,699],i:[250,1200],e:[300,1800]},
+  "Phone Cases & Covers":{a:[99,499],m:[49,199],f:[79,349],i:[120,600],e:[150,800]},
+  "USB Cables & Accessories":{a:[149,599],m:[79,299],f:[99,449],i:[150,500],e:[200,700]},
+  "Smart Home Gadgets":{a:[499,2999],m:[199,999],f:[299,1999],i:[600,3500],e:[700,5000]},
+  "Stationery & Notebooks":{a:[99,499],m:[49,199],f:[79,349],i:[120,600],e:[150,800]},
+  "Toys & Games":{a:[199,999],m:[79,399],f:[149,699],i:[250,1200],e:[300,1500]},
+  "Pet Products":{a:[199,999],m:[79,349],f:[149,699],i:[200,1000],e:[300,1500]},
+  "Other Product":{a:[199,999],m:[79,349],f:[149,699],i:[200,1000],e:[250,1500]},
+};
+const PLATS=[
+  {k:'a',name:'Amazon India',icon:'📦',color:'#FF9900'},
+  {k:'m',name:'Meesho',icon:'🛍️',color:'#9B59B6'},
+  {k:'f',name:'Flipkart',icon:'⚡',color:'#2874F0'},
+  {k:'i',name:'Instagram Shops',icon:'📸',color:'#E1306C'},
+  {k:'e',name:'Etsy / Global',icon:'🌍',color:'#F1641E'},
+];
+
+const fmt=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+let pChart=null;
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function runAnalysis(){
+  const cat=document.getElementById('i-category').value;
+  const prod=document.getElementById('i-product').value||cat;
+  const myP=+document.getElementById('i-price').value;
+  const myC=+document.getElementById('i-cost').value;
+  const mkt=document.getElementById('i-market').value;
+  const ch=document.getElementById('i-channel').value;
+  if(!cat){showToast(t('t-cat'));return;}
+  if(!myP||!myC){showToast(t('t-price'));return;}
+
+  const btn=document.getElementById('abtn');
+  btn.disabled=true;
+  document.getElementById('btn-txt').textContent='...';
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('results').classList.remove('active');
+
+  const data=MD[cat]||MD['Other Product'];
+  const steps=['st1','st2','st3','st4','st5'];
+  for(let i=0;i<steps.length;i++){
+    await delay(550);
+    if(i>0){document.getElementById(steps[i-1]).classList.remove('active');document.getElementById(steps[i-1]).classList.add('done');}
+    document.getElementById(steps[i]).classList.add('active');
+  }
+  await delay(600);
+  steps.forEach(s=>{document.getElementById(s).classList.remove('active');document.getElementById(s).classList.add('done');});
+
+  document.getElementById('loading').classList.remove('active');
+  buildResults(data,myP,myC,cat,prod,mkt,ch);
+  callAI(cat,prod,myP,myC,mkt,ch,data);
+  btn.disabled=false;
+  document.getElementById('btn-txt').textContent=t('btn-analyse');
+}
+
+function buildResults(data,myP,myC,cat,prod,mkt,ch){
+  document.getElementById('results').classList.add('active');
+  const avgs=PLATS.map(p=>(data[p.k][0]+data[p.k][1])/2);
+  const mktMin=Math.min(...PLATS.map(p=>data[p.k][0]));
+  const mktMax=Math.max(...PLATS.map(p=>data[p.k][1]));
+  const mktAvg=Math.round(avgs.reduce((a,b)=>a+b)/avgs.length);
+  let opt=Math.round(mktAvg*0.95);
+  if(opt<Math.round(myC*1.35))opt=Math.round(myC*1.35);
+  const pct=((myP/mktAvg-1)*100);
+
+  let posClass,posText,posDesc;
+  if(pct<-20){posClass='underpriced';posText='UNDERPRICED';posDesc=`You're pricing ${Math.abs(pct.toFixed(0))}% below market average. You may be leaving money on the table.`;}
+  else if(pct<=10){posClass='competitive';posText='COMPETITIVELY PRICED';posDesc='You are well within the market range — great position for high sales volume.';}
+  else if(pct<=35){posClass='premium';posText='PREMIUM POSITIONED';posDesc=`You're ${pct.toFixed(0)}% above market average. Back this up with strong quality and branding.`;}
+  else{posClass='overpriced';posText='ABOVE MARKET';posDesc=`You're ${pct.toFixed(0)}% above market average. This may be reducing your conversion rate.`;}
+
+  const banner=document.getElementById('pos-banner');
+  banner.className='pos-banner '+posClass+' fu d1';
+  document.getElementById('pos-heading').textContent=posText;
+  document.getElementById('pos-desc').textContent=posDesc;
+
+  const totalR=mktMax-mktMin||1;
+  const pinPct=Math.max(5,Math.min(95,((myP-mktMin)/totalR)*100));
+  document.getElementById('track-pin').style.left=pinPct+'%';
+  document.getElementById('pin-val').textContent=fmt(myP);
+  document.getElementById('tr-min').textContent=fmt(mktMin);
+  document.getElementById('tr-max').textContent=fmt(mktMax);
+
+  document.getElementById('m-avg').textContent=fmt(mktAvg);
+  document.getElementById('m-avg-s').textContent=`Range: ${fmt(mktMin)} – ${fmt(mktMax)}`;
+  const optMargin=((opt-myC)/opt*100);
+  document.getElementById('m-opt').textContent=fmt(opt);
+  document.getElementById('m-opt-s').textContent=`${optMargin.toFixed(1)}% profit margin`;
+  const profOpt=opt-myC;
+  document.getElementById('m-prof').textContent=fmt(profOpt)+'/unit';
+  document.getElementById('m-prof-s').textContent=`vs current ${fmt(myP-myC)}/unit`;
+  const adj=opt-myP;
+  const adjEl=document.getElementById('m-adj');
+  if(Math.abs(adj)<10){adjEl.textContent='No Change';adjEl.className='mt-val green';document.getElementById('m-adj-s').textContent='Your price is already optimal';}
+  else if(adj>0){adjEl.textContent='+'+fmt(adj);adjEl.className='mt-val green';document.getElementById('m-adj-s').textContent=`Increase for ${fmt(adj)} more/unit`;}
+  else{adjEl.textContent=fmt(adj);adjEl.className='mt-val blue';document.getElementById('m-adj-s').textContent='Lower price may increase volume';}
+
+  document.getElementById('plat-tbody').innerHTML=PLATS.map(p=>{
+    const [lo,hi]=data[p.k];const avg=Math.round((lo+hi)/2);
+    const r=myP/avg;
+    const vs=r<0.85?{cls:'g',lbl:t('b-cheap')}:r>1.15?{cls:'r',lbl:t('b-high')}:{cls:'b',lbl:t('b-fair')};
+    return`<tr><td><div class="pname-cell"><div class="pav">${p.icon}</div><span class="pn">${p.name}</span></div></td><td><span class="prange">${fmt(lo)} – ${fmt(hi)}</span></td><td><span class="pavg" style="color:${p.color}">${fmt(avg)}</span></td><td><span class="badge ${vs.cls}">${vs.lbl}</span></td></tr>`;
+  }).join('');
+
+  if(pChart)pChart.destroy();
+  pChart=new Chart(document.getElementById('pchart'),{
+    type:'bar',
+    data:{labels:[...PLATS.map(p=>p.name),'YOUR PRICE','OPTIMAL'],
+      datasets:[{data:[...PLATS.map(p=>Math.round((data[p.k][0]+data[p.k][1])/2)),myP,opt],
+        backgroundColor:[...PLATS.map(p=>p.color),'#635bff','#10b981'],borderRadius:8,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#9ca3af',font:{size:10}}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#9ca3af',font:{size:10},callback:v=>'₹'+(v>=1000?(v/1000).toFixed(0)+'K':v)}}
+      }}
+  });
+
+  const strats=[
+    {tag:t('sv'),cls:'v',title:t('svt'),price:Math.round(mktAvg*0.82),body:'18% below market average. Win customers fast, build reviews and scale volume quickly.'},
+    {tag:t('sb'),cls:'b',title:t('sbt'),price:Math.round(mktAvg*0.97),body:'Match the market average. Best balance between conversion rate and profit margin.'},
+    {tag:t('sp'),cls:'p',title:t('spt'),price:Math.round(mktAvg*1.2),body:'Position as a quality product. Requires strong packaging and brand storytelling.'},
+  ];
+  document.getElementById('strat-grid').innerHTML=strats.map(s=>`
+    <div class="stile">
+      <div class="stag ${s.cls}">${s.tag}</div>
+      <div class="st-title">${s.title}</div>
+      <div class="st-body">${s.body}</div>
+      <div class="st-price">${fmt(s.price)}/unit</div>
+    </div>`).join('');
+
+  window.scrollTo({top:document.getElementById('results').offsetTop-80,behavior:'smooth'});
+}
+
+async function callAI(cat,prod,myP,myC,mkt,ch,data){
+  const avgs=PLATS.map(p=>(data[p.k][0]+data[p.k][1])/2);
+  const mktAvg=Math.round(avgs.reduce((a,b)=>a+b)/avgs.length);
+  const margin=((myP-myC)/myP*100).toFixed(1);
+  const pct=((myP/mktAvg-1)*100).toFixed(0);
+  const prompt=`You are a sharp Indian business pricing consultant. Analyse:
+
+Product: ${prod} (Category: ${cat})
+Selling Price: ₹${myP} | Cost: ₹${myC} | Margin: ${margin}%
+Market Average: ₹${mktAvg} | My price is ${pct}% vs market
+Target: ${mkt} | Channel: ${ch}
+Amazon ₹${data.a[0]}–₹${data.a[1]}, Meesho ₹${data.m[0]}–₹${data.m[1]}, Flipkart ₹${data.f[0]}–₹${data.f[1]}
+
+Write 4 sharp paragraphs for an Indian small business seller:
+1. Exact pricing position with specific numbers
+2. One key risk or missed opportunity  
+3. Single most important action this week with exact price recommendation
+4. One creative Indian market tactic (festive bundling, WhatsApp exclusive, etc.) for 20%+ more profit
+
+Use **bold** for numbers. Under 200 words. Speak as "you" directly to seller.`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const json=await res.json();
+    const text=json.content?.[0]?.text||'';
+    document.getElementById('ai-content').innerHTML=text.split('\n\n').map(p=>`<p>${p.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</p>`).join('');
+  }catch{
+    document.getElementById('ai-content').innerHTML=`<p style="color:var(--text3)">AI analysis unavailable. The market data and recommendations above are fully ready to use.</p>`;
+  }
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+</script>
+</body>
+</html>

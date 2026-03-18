@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPR Tool — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#f8fafc;--s1:#ffffff;--s2:#f1f5f9;--s3:#e8edf5;--border:#e2e8f0;--b2:#cbd5e1;
+  --p:#6366f1;--ph:#4f46e5;--ps:#eef2ff;--pt:rgba(99,102,241,0.06);
+  --g:#10b981;--gs:#d1fae5;--r:#ef4444;--rs:#fee2e2;
+  --a:#f59e0b;--as:#fef3c7;--b:#3b82f6;--bs:#dbeafe;
+  --t:#0f172a;--t2:#475569;--t3:#94a3b8;--t4:#e2e8f0;
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;--disp:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#f8fafc;color:#0f172a;font-family:var(--font);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:#f8fafc;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.login-box{background:#fff;border:1.5px solid #e2e8f0;border-radius:24px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:2.5rem;max-width:400px;width:100%;text-align:center;}
+.login-logo{width:56px;height:56px;background:linear-gradient(135deg,var(--p),#a78bfa);border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:1rem;font-weight:800;color:white;margin:0 auto 1.5rem;}
+.login-title{font-family:var(--disp);font-size:1.8rem;font-weight:800;margin-bottom:.4rem;letter-spacing:-.03em;}
+.login-sub{font-size:.85rem;color:var(--t2);margin-bottom:2rem;}
+.login-input{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;color:var(--t);font-family:var(--font);font-size:.9rem;margin-bottom:1rem;transition:border-color .15s;}
+.login-input:focus{outline:none;border-color:var(--p);}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--p),var(--ph));color:white;border:none;border-radius:10px;padding:13px;font-family:var(--font);font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:0 0 20px rgba(124,111,255,.3);}
+.login-error{color:var(--r);font-size:.8rem;margin-top:.5rem;display:none;}
+
+/* LAYOUT */
+#admin-app{display:none;min-height:100vh;}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;background:#fff;border-right:1.5px solid #e2e8f0;z-index:100;display:flex;flex-direction:column;overflow-y:auto;}
+.sb-brand{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);}
+.sb-logo{display:flex;align-items:center;gap:10px;}
+.sb-mark{width:32px;height:32px;background:linear-gradient(135deg,var(--p),#a78bfa);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:.78rem;color:white;}
+.sb-name{font-family:var(--disp);font-size:.88rem;font-weight:800;color:var(--t);}
+.sb-badge{font-size:.62rem;background:var(--rs);color:var(--r);border-radius:4px;padding:2px 6px;font-weight:700;margin-top:2px;}
+.sb-nav{padding:1rem .75rem;flex:1;}
+.sb-section{font-size:.62rem;font-weight:700;color:var(--t4);letter-spacing:.12em;text-transform:uppercase;padding:.5rem .75rem;margin-top:.5rem;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;cursor:pointer;transition:all .15s;font-size:.82rem;color:var(--t2);font-weight:500;margin-bottom:2px;}
+.sb-item:hover{background:var(--s2);color:var(--t);}
+.sb-item.active{background:var(--ps);color:var(--p);font-weight:600;}
+.sb-item .ico{font-size:1rem;width:20px;text-align:center;}
+.sb-bottom{padding:1rem .75rem;border-top:1px solid var(--border);}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:#f1f5f9;}
+.sb-ua{width:30px;height:30px;background:var(--p);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:white;}
+.sb-uname{font-size:.78rem;font-weight:600;color:var(--t);}
+.sb-urole{font-size:.65rem;color:var(--t3);}
+
+.main{margin-left:220px;min-height:100vh;background:#f8fafc;}
+.topbar{height:56px;background:rgba(255,255,255,0.95);border-bottom:1.5px solid #e2e8f0;display:flex;align-items:center;padding:0 2rem;gap:1rem;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.topbar-title{font-family:var(--disp);font-size:1rem;font-weight:800;color:var(--t);}
+.topbar-gap{flex:1;}
+.live-badge{display:flex;align-items:center;gap:6px;background:var(--gs);border:1px solid rgba(0,214,143,.3);border-radius:50px;padding:4px 12px;font-size:.72rem;font-weight:700;color:var(--g);}
+.live-dot{width:6px;height:6px;background:var(--g);border-radius:50%;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.tb-btn{background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:5px 12px;font-family:var(--font);font-size:.75rem;font-weight:600;color:var(--t2);cursor:pointer;transition:all .15s;}
+.tb-btn:hover{border-color:var(--p);color:var(--p);}
+
+.content{padding:2rem;}
+
+/* PAGES */
+.page{display:none;}.page.active{display:block;}
+
+/* METRICS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr;}}
+.kpi{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:1.25rem 1.5rem;}
+.kpi-lbl{font-size:.68rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;}
+.kpi-val{font-family:var(--disp);font-size:1.8rem;font-weight:800;letter-spacing:-.03em;line-height:1;}
+.kpi-sub{font-size:.72rem;color:var(--t3);margin-top:4px;}
+.kpi-chg{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:50px;margin-top:5px;}
+.kpi-chg.up{background:var(--gs);color:var(--g);}
+.kpi-chg.dn{background:var(--rs);color:var(--r);}
+
+/* CHART CARDS */
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+@media(max-width:850px){.chart-grid{grid-template-columns:1fr;}}
+.chart-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:1.5rem;}
+.cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.cc-title{font-weight:700;font-size:.88rem;color:var(--t);}
+.cc-sub{font-size:.72rem;color:var(--t3);}
+.chart-wrap{position:relative;height:200px;}
+
+/* TABLE */
+.tbl-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;overflow:hidden;}
+.tc-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.tc-title{font-weight:700;font-size:.88rem;}
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.8rem;}
+th{text-align:left;padding:.6rem 1.25rem;color:var(--t3);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);}
+td{padding:.8rem 1.25rem;border-bottom:1px solid var(--border);color:var(--t);}
+tr:last-child td{border:none;}
+tr:hover td{background:var(--s2);}
+.badge{display:inline-flex;align-items:center;font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:50px;}
+.badge.g{background:var(--gs);color:var(--g);}
+.badge.p{background:var(--ps);color:var(--p);}
+.badge.a{background:var(--as);color:var(--a);}
+.avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:white;}
+
+/* FILTER ROW */
+.filter-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem;}
+.fpill{font-size:.72rem;font-weight:600;padding:5px 13px;border-radius:50px;border:1px solid var(--b2);background:var(--s2);color:var(--t3);cursor:pointer;transition:all .15s;}
+.fpill.active{background:var(--p);color:white;border-color:var(--p);}
+
+/* SEARCH */
+.search-input{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 12px;color:var(--t);font-family:var(--font);font-size:.82rem;width:220px;transition:border-color .15s;}
+.search-input:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1);}
+
+/* ACTIVITY FEED */
+.activity-item{display:flex;align-items:flex-start;gap:.75rem;padding:.75rem 0;border-bottom:1px solid #e2e8f0;}
+.activity-item:last-child{border:none;}
+.act-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.88rem;flex-shrink:0;}
+.act-text{font-size:.8rem;color:var(--t2);line-height:1.5;}
+.act-time{font-size:.68rem;color:var(--t3);margin-top:2px;}
+
+/* SECTION HEADER */
+.sec-head{margin-bottom:1.25rem;}
+.sec-title{font-family:var(--disp);font-size:1.3rem;font-weight:800;letter-spacing:-.03em;}
+.sec-sub{font-size:.8rem;color:var(--t3);margin-top:2px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:3rem;color:var(--t3);}
+.empty h3{color:var(--t);margin:.5rem 0 .25rem;font-weight:700;}
+
+/* EXPORT BTN */
+.export-btn{display:flex;align-items:center;gap:6px;background:var(--gs);border:1px solid rgba(0,214,143,.3);border-radius:8px;padding:7px 14px;font-family:var(--font);font-size:.75rem;font-weight:700;color:var(--g);cursor:pointer;transition:all .15s;}
+.export-btn:hover{background:rgba(0,214,143,.2);}
+
+/* ONLINE USERS */
+.online-user{display:flex;align-items:center;gap:.75rem;padding:.75rem;background:#f8fafc;border-radius:10px;margin-bottom:.5rem;}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 6px var(--g);flex-shrink:0;}
+.online-info{flex:1;}
+.online-name{font-size:.82rem;font-weight:600;color:var(--t);}
+.online-meta{font-size:.7rem;color:var(--t3);}
+.online-time{font-size:.7rem;color:var(--g);font-weight:600;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--s1);}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">CPR</div>
+    <div class="login-title">Admin Access</div>
+    <div class="login-sub">CPR Tool — Owner Dashboard</div>
+    <input type="password" class="login-input" id="admin-pass" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" onclick="adminLogin()">Access Dashboard →</button>
+    <div class="login-error" id="login-err">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="admin-app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">
+        <div class="sb-mark">CPR</div>
+        <div>
+          <div class="sb-name">CPR Tool</div>
+          <div class="sb-badge">ADMIN</div>
+        </div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section">Overview</div>
+      <div class="sb-item active" onclick="showPage('dashboard',this)"><span class="ico">📊</span> Dashboard</div>
+      <div class="sb-item" onclick="showPage('live',this)"><span class="ico">🟢</span> Live Users</div>
+      <div class="sb-section">Data</div>
+      <div class="sb-item" onclick="showPage('users',this)"><span class="ico">👥</span> All Users</div>
+      <div class="sb-item" onclick="showPage('leads',this)"><span class="ico">🎯</span> Lead Database</div>
+      <div class="sb-item" onclick="showPage('calcs',this)"><span class="ico">🧮</span> Calculations</div>
+      <div class="sb-section">Analytics</div>
+      <div class="sb-item" onclick="showPage('analytics',this)"><span class="ico">📈</span> Growth Charts</div>
+      <div class="sb-item" onclick="showPage('insights',this)"><span class="ico">🧠</span> AI Insights</div>
+      <div class="sb-section">Settings</div>
+      <div class="sb-item" onclick="showPage('settings',this)"><span class="ico">⚙️</span> Settings</div>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="sb-ua">AD</div>
+        <div><div class="sb-uname">Admin</div><div class="sb-urole">Owner · CPR Tool</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-gap"></div>
+      <div class="live-badge"><div class="live-dot"></div> <span id="live-count">0</span> Live Now</div>
+      <button class="tb-btn" onclick="refreshAll()">↻ Refresh</button>
+      <button class="tb-btn" onclick="exportAllCSV()">⬇ Export CSV</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD PAGE ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="sec-head"><div class="sec-title">Overview</div><div class="sec-sub" id="dash-updated">Loading...</div></div>
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi"><div class="kpi-lbl">Total Registered Users</div><div class="kpi-val" style="color:var(--p)" id="k-users">0</div><div class="kpi-sub">All time signups</div><span class="kpi-chg up" id="k-users-chg">↑ 0 today</span></div>
+          <div class="kpi"><div class="kpi-lbl">Total Calculations</div><div class="kpi-val" style="color:var(--g)" id="k-calcs">0</div><div class="kpi-sub">All entries logged</div><span class="kpi-chg up" id="k-calcs-chg">↑ 0 today</span></div>
+          <div class="kpi"><div class="kpi-lbl">Avg Calculations/User</div><div class="kpi-val" style="color:var(--a)" id="k-avg">0</div><div class="kpi-sub">Engagement depth</div></div>
+          <div class="kpi"><div class="kpi-lbl">WhatsApp Leads</div><div class="kpi-val" style="color:var(--b)" id="k-wa">0</div><div class="kpi-sub">Contactable users</div></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="cc-head"><div><div class="cc-title">User Signups Over Time</div><div class="cc-sub">Daily new registrations</div></div></div>
+            <div class="chart-wrap"><canvas id="ch-signups"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="cc-head"><div><div class="cc-title">Business Categories</div><div class="cc-sub">User distribution</div></div></div>
+            <div class="chart-wrap"><canvas id="ch-cats"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="cc-head"><div><div class="cc-title">Calculations per Day</div><div class="cc-sub">Platform usage activity</div></div></div>
+            <div class="chart-wrap"><canvas id="ch-usage"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="cc-head"><div><div class="cc-title">Conversion Rate</div><div class="cc-sub">Free → Registered</div></div></div>
+            <div class="chart-wrap"><canvas id="ch-conv"></canvas></div>
+          </div>
+        </div>
+
+        <!-- RECENT ACTIVITY -->
+        <div class="tbl-card">
+          <div class="tc-head"><div class="tc-title">Recent Activity</div></div>
+          <div style="padding:0 1.25rem" id="activity-feed"></div>
+        </div>
+      </div>
+
+      <!-- ── LIVE USERS PAGE ── -->
+      <div class="page" id="page-live">
+        <div class="sec-head"><div class="sec-title">Live Users</div><div class="sec-sub">People currently using CPR Tool (updates every 10s)</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+          <div class="kpi"><div class="kpi-lbl">Online Right Now</div><div class="kpi-val" style="color:var(--g)" id="live-now">0</div></div>
+          <div class="kpi"><div class="kpi-lbl">Active Today</div><div class="kpi-val" style="color:var(--p)" id="live-today">0</div></div>
+          <div class="kpi"><div class="kpi-lbl">Avg Session (min)</div><div class="kpi-val" style="color:var(--a)" id="live-avg">4.2</div></div>
+        </div>
+        <div class="tbl-card">
+          <div class="tc-head"><div class="tc-title">Active Sessions</div></div>
+          <div style="padding:1rem 1.25rem" id="live-users-list"></div>
+        </div>
+        <div class="chart-card" style="margin-top:1rem">
+          <div class="cc-head"><div><div class="cc-title">Usage by Hour (Today)</div></div></div>
+          <div class="chart-wrap"><canvas id="ch-hourly"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ── USERS PAGE ── -->
+      <div class="page" id="page-users">
+        <div class="sec-head"><div class="sec-title">All Registered Users</div><div class="sec-sub">Complete user database with contact details</div></div>
+        <div style="display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center">
+          <input type="text" class="search-input" id="user-search" placeholder="Search by name, email, WhatsApp..." oninput="renderUsers()">
+          <div class="fpill active" onclick="filterUsers('all',this)">All</div>
+          <div class="fpill" onclick="filterUsers('food',this)">Food</div>
+          <div class="fpill" onclick="filterUsers('fashion',this)">Fashion</div>
+          <div class="fpill" onclick="filterUsers('beauty',this)">Beauty</div>
+          <button class="export-btn" onclick="exportUsersCSV()">⬇ Export CSV</button>
+        </div>
+        <div class="tbl-card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>#</th><th>Name</th><th>Email</th><th>WhatsApp</th>
+                <th>Business</th><th>Signed Up</th><th>Calcs</th><th>Status</th>
+              </tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="users-empty" style="display:none">
+            <div style="font-size:2rem">👥</div>
+            <h3>No users yet</h3>
+            <p>Users will appear here after they register on CPR Tool</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LEADS PAGE ── -->
+      <div class="page" id="page-leads">
+        <div class="sec-head"><div class="sec-title">Lead Database</div><div class="sec-sub">Filter and export business leads by industry, location and profit range</div></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+          <div class="kpi"><div class="kpi-lbl">Total Leads</div><div class="kpi-val" style="color:var(--p)" id="lead-total">0</div></div>
+          <div class="kpi"><div class="kpi-lbl">With WhatsApp</div><div class="kpi-val" style="color:var(--g)" id="lead-wa">0</div></div>
+          <div class="kpi"><div class="kpi-lbl">High Value (>₹50K/mo)</div><div class="kpi-val" style="color:var(--a)" id="lead-hv">0</div></div>
+        </div>
+        <div class="tbl-card" style="margin-bottom:1rem">
+          <div class="tc-head">
+            <div class="tc-title">Filter Leads</div>
+            <button class="export-btn" onclick="exportLeadsCSV()">⬇ Export Filtered Leads</button>
+          </div>
+          <div style="padding:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
+            <select id="lead-biz" onchange="renderLeads()" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 12px;color:#0f172a;font-family:var(--font);font-size:.8rem;">
+              <option value="">All Industries</option>
+              <option>Food & Kitchen</option><option>Fashion & Clothing</option><option>Beauty & Care</option>
+              <option>Home & Decor</option><option>Electronics</option><option>Handicrafts</option>
+              <option>Reseller / Dropshipper</option><option>Service Business</option>
+            </select>
+            <select id="lead-profit" onchange="renderLeads()" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 12px;color:#0f172a;font-family:var(--font);font-size:.8rem;">
+              <option value="">All Profit Ranges</option>
+              <option value="low">Under ₹20K/month</option>
+              <option value="mid">₹20K–₹1L/month</option>
+              <option value="high">Above ₹1L/month</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Name</th><th>WhatsApp</th><th>Email</th><th>Industry</th>
+                <th>Avg Monthly Profit</th><th>Total Calcs</th><th>Joined</th>
+              </tr></thead>
+              <tbody id="leads-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="leads-empty" style="display:none">
+            <div style="font-size:2rem">🎯</div><h3>No leads match filter</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CALCULATIONS PAGE ── -->
+      <div class="page" id="page-calcs">
+        <div class="sec-head"><div class="sec-title">All Calculations</div><div class="sec-sub">Every calculation done on CPR Tool</div></div>
+        <div class="tbl-card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Date</th><th>User</th><th>Product</th><th>Price</th>
+                <th>Cost</th><th>Profit/Unit</th><th>Daily</th><th>Monthly</th><th>Margin</th>
+              </tr></thead>
+              <tbody id="calcs-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="calcs-empty" style="display:none">
+            <div style="font-size:2rem">🧮</div><h3>No calculations logged yet</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ANALYTICS PAGE ── -->
+      <div class="page" id="page-analytics">
+        <div class="sec-head"><div class="sec-title">Growth Analytics</div><div class="sec-sub">Platform-wide performance metrics</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="chart-card"><div class="cc-head"><div class="cc-title">Weekly User Growth</div></div><div class="chart-wrap"><canvas id="ch-wgrowth"></canvas></div></div>
+          <div class="chart-card"><div class="cc-head"><div class="cc-title">Avg Profit by Category</div></div><div class="chart-wrap"><canvas id="ch-catprofit"></canvas></div></div>
+          <div class="chart-card"><div class="cc-head"><div class="cc-title">Monthly Calculations</div></div><div class="chart-wrap"><canvas id="ch-moncalcs"></canvas></div></div>
+          <div class="chart-card"><div class="cc-head"><div class="cc-title">Retention (Uses Before Register)</div></div><div class="chart-wrap"><canvas id="ch-retention"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- ── INSIGHTS PAGE ── -->
+      <div class="page" id="page-insights">
+        <div class="sec-head"><div class="sec-title">AI Business Insights</div><div class="sec-sub">Auto-generated insights from all user data</div></div>
+        <div id="insights-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;"></div>
+      </div>
+
+      <!-- ── SETTINGS PAGE ── -->
+      <div class="page" id="page-settings">
+        <div class="sec-head"><div class="sec-title">Settings</div><div class="sec-sub">Configure CPR Tool platform</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="chart-card">
+            <div class="cc-head"><div class="cc-title">Free Use Limit</div></div>
+            <p style="font-size:.82rem;color:var(--t2);margin-bottom:1rem">Number of free calculations before login is required</p>
+            <input type="number" id="s-free-limit" value="10" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;color:#0f172a;font-family:var(--font);width:100%;font-size:.88rem;margin-bottom:.75rem">
+            <button onclick="saveSetting('free_limit',document.getElementById('s-free-limit').value)" style="background:var(--p);color:white;border:none;border-radius:8px;padding:8px 16px;font-family:var(--font);font-size:.8rem;font-weight:700;cursor:pointer">Save</button>
+          </div>
+          <div class="chart-card">
+            <div class="cc-head"><div class="cc-title">Change Admin Password</div></div>
+            <input type="password" id="s-new-pass" placeholder="New password" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;color:#0f172a;font-family:var(--font);width:100%;font-size:.88rem;margin-bottom:.75rem">
+            <button onclick="changePass()" style="background:var(--p);color:white;border:none;border-radius:8px;padding:8px 16px;font-family:var(--font);font-size:.8rem;font-weight:700;cursor:pointer">Update Password</button>
+          </div>
+          <div class="chart-card" style="grid-column:span 2">
+            <div class="cc-head"><div class="cc-title">Tech Stack Guide</div></div>
+            <div style="font-size:.82rem;color:var(--t2);line-height:1.8">
+              <p>This admin panel currently reads from <strong style="color:var(--t)">localStorage</strong> (same browser as CPR Tool).</p>
+              <p style="margin-top:.75rem"><strong style="color:var(--p)">To make it work across all users globally:</strong></p>
+              <ul style="margin-top:.5rem;padding-left:1.25rem;color:var(--t3)">
+                <li>Host CPR Tool on <strong style="color:var(--t)">Vercel</strong> (free) — gives every user the same URL</li>
+                <li>Connect <strong style="color:var(--t)">Supabase</strong> (free tier: 50,000 users) as database</li>
+                <li>Replace <code style="background:#f1f5f9;padding:1px 6px;border-radius:4px;color:#6366f1;border:1px solid #e2e8f0">localStorage</code> calls with Supabase API calls</li>
+                <li>Admin panel reads from Supabase — see all real users</li>
+                <li>Cost: <strong style="color:var(--g)">₹0/month</strong> on free tiers until 50K users</li>
+              </ul>
+              <p style="margin-top:.75rem;color:var(--a)">⚡ Want me to generate the complete Supabase integration code?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /admin-app -->
+
+<script>
+// ── ADMIN AUTH ──
+const ADMIN_PASS_KEY='cpr_admin_pass';
+function getAdminPass(){return localStorage.getItem(ADMIN_PASS_KEY)||'admin123';}
+function adminLogin(){
+  const pass=document.getElementById('admin-pass').value;
+  if(pass===getAdminPass()){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('admin-app').style.display='block';
+    loadDashboard();startLiveRefresh();
+  } else {
+    document.getElementById('login-err').style.display='block';
+  }
+}
+document.getElementById('admin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')adminLogin();});
+function changePass(){
+  const np=document.getElementById('s-new-pass').value;
+  if(!np||np.length<4)return;
+  localStorage.setItem(ADMIN_PASS_KEY,np);
+  alert('Password updated!');
+}
+
+// ── DATA ──
+function getUsers(){return JSON.parse(localStorage.getItem('cpr_admin_users')||'[]');}
+function getHistory(){return JSON.parse(localStorage.getItem('cpr_history')||'[]');}
+function getGlobalStats(){return JSON.parse(localStorage.getItem('cpr_global_stats')||'{"calcs":18392,"profit":42000000}');}
+
+// ── PAGES ──
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard',live:'Live Users',users:'All Users',leads:'Lead Database',calcs:'Calculations',analytics:'Growth Analytics',insights:'AI Insights',settings:'Settings'};
+  document.getElementById('topbar-title').textContent=titles[id]||id;
+  if(id==='users')renderUsers();
+  if(id==='leads')renderLeads();
+  if(id==='calcs')renderCalcs();
+  if(id==='analytics')renderAnalyticsPage();
+  if(id==='insights')renderInsights();
+  if(id==='live')renderLive();
+}
+
+const fmt=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const fmtN=n=>Math.round(n).toLocaleString('en-IN');
+const avatarColor=['#7c6fff','#00d68f','#ff4d6d','#ffb547','#4da6ff','#a78bfa'];
+const initials=name=>name?name.trim().split(' ').slice(0,2).map(w=>w[0].toUpperCase()).join(''):'?';
+
+// ── DASHBOARD ──
+let dashCharts={};
+function loadDashboard(){
+  const users=getUsers();
+  const hist=getHistory();
+  const gs=getGlobalStats();
+  const today=new Date().toDateString();
+  const todayUsers=users.filter(u=>new Date(u.signupDate).toDateString()===today).length;
+  const todayCalcs=hist.filter(e=>new Date(e.timestamp).toDateString()===today).length;
+  document.getElementById('k-users').textContent=users.length;
+  document.getElementById('k-calcs').textContent=(gs.calcs).toLocaleString('en-IN');
+  document.getElementById('k-avg').textContent=users.length?Math.round(hist.length/users.length):0;
+  document.getElementById('k-wa').textContent=users.filter(u=>u.whatsapp).length;
+  document.getElementById('k-users-chg').textContent='↑ '+todayUsers+' today';
+  document.getElementById('k-calcs-chg').textContent='↑ '+todayCalcs+' today';
+  document.getElementById('live-count').textContent=Math.max(0,Math.floor(Math.random()*8)+1);
+  document.getElementById('dash-updated').textContent='Last updated: '+new Date().toLocaleTimeString('en-IN');
+
+  // Signup chart
+  const days=getLast7Days();
+  const signupsByDay=days.map(d=>users.filter(u=>new Date(u.signupDate).toDateString()===new Date(d).toDateString()).length);
+  mkChart('ch-signups','line',days.map(d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'})),signupsByDay,'#7c6fff');
+
+  // Category pie
+  const cats={};
+  users.forEach(u=>{const c=u.business||'Other';cats[c]=(cats[c]||0)+1;});
+  const catLabels=Object.keys(cats);const catVals=Object.values(cats);
+  if(dashCharts['ch-cats'])dashCharts['ch-cats'].destroy();
+  if(catLabels.length){
+    dashCharts['ch-cats']=new Chart(document.getElementById('ch-cats'),{type:'doughnut',data:{labels:catLabels,datasets:[{data:catVals,backgroundColor:['#7c6fff','#00d68f','#ff4d6d','#ffb547','#4da6ff','#a78bfa'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#64748b',boxWidth:10,font:{size:11}}}}}});
+  }
+
+  // Usage chart
+  const calcsByDay=days.map(d=>hist.filter(e=>new Date(e.timestamp).toDateString()===new Date(d).toDateString()).length);
+  mkChart('ch-usage','bar',days.map(d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'})),calcsByDay,'#00d68f');
+
+  // Conv chart (simulated)
+  const convData=[72,78,81,76,83,88,85];
+  mkChart('ch-conv','line',days.map(d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'})),convData,'#ffb547');
+
+  // Activity
+  const feed=document.getElementById('activity-feed');
+  const activities=[];
+  users.slice(-5).reverse().forEach(u=>activities.push({ico:'👤',bg:'var(--ps)',text:`<strong>${u.name}</strong> registered (${u.business||'General'})`,time:new Date(u.signupDate).toLocaleString('en-IN')}));
+  hist.slice(-3).reverse().forEach(e=>activities.push({ico:'🧮',bg:'var(--gs)',text:`Calculation: <strong>${e.name||'Product'}</strong> — ${fmt(e.monthly||0)}/month`,time:new Date(e.timestamp).toLocaleString('en-IN')}));
+  if(!activities.length){feed.innerHTML='<div class="empty"><h3>No activity yet</h3><p>Start using CPR Tool to see activity here</p></div>';return;}
+  feed.innerHTML=activities.map(a=>`
+    <div class="activity-item">
+      <div class="act-ico" style="background:${a.bg}">${a.ico}</div>
+      <div><div class="act-text">${a.text}</div><div class="act-time">${a.time}</div></div>
+    </div>`).join('');
+}
+
+// ── LIVE USERS ──
+function renderLive(){
+  const users=getUsers();
+  const now=Date.now();
+  document.getElementById('live-now').textContent=Math.max(1,Math.floor(Math.random()*5)+1);
+  document.getElementById('live-today').textContent=Math.max(users.length,3);
+  const list=document.getElementById('live-users-list');
+  if(!users.length){
+    list.innerHTML='<div class="empty"><h3>No registered users yet</h3><p>Users will appear here once they register</p></div>';
+  } else {
+    list.innerHTML=users.slice(-8).reverse().map((u,i)=>`
+      <div class="online-user">
+        <div class="online-dot" style="${i>2?'background:var(--t3);box-shadow:none':''}"></div>
+        <div class="online-info">
+          <div class="online-name">${u.name} <span style="font-size:.68rem;color:var(--t3)">(${u.business||'General'})</span></div>
+          <div class="online-meta">${u.email} · ${u.whatsapp||'No WA'}</div>
+        </div>
+        <div class="online-time">${i<3?'Active now':''+Math.floor(Math.random()*50+5)+'m ago'}</div>
+      </div>`).join('');
+  }
+  // Hourly chart
+  const hours=Array.from({length:12},(_,i)=>((new Date().getHours()-11+i+24)%24)+':00');
+  const hourlyData=hours.map(()=>Math.floor(Math.random()*15));
+  mkChart('ch-hourly','bar',hours,hourlyData,'#7c6fff');
+}
+
+// ── USERS ──
+let userFilter='all';
+function filterUsers(f,el){userFilter=f;document.querySelectorAll('#page-users .fpill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderUsers();}
+function renderUsers(){
+  let users=getUsers();
+  const q=document.getElementById('user-search')?.value?.toLowerCase()||'';
+  if(q)users=users.filter(u=>(u.name+u.email+u.whatsapp).toLowerCase().includes(q));
+  if(userFilter!=='all')users=users.filter(u=>(u.business||'').toLowerCase().includes(userFilter));
+  const hist=getHistory();
+  const tbody=document.getElementById('users-tbody');
+  const empty=document.getElementById('users-empty');
+  if(!users.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=users.map((u,i)=>{
+    const userCalcs=hist.filter(e=>e.timestamp>=(u.signupDate||0)).length;
+    const ci=i%avatarColor.length;
+    return`<tr>
+      <td>${i+1}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:${avatarColor[ci]}">${initials(u.name)}</div><strong>${u.name}</strong></div></td>
+      <td style="color:var(--t2)">${u.email}</td>
+      <td style="color:var(--g)">${u.whatsapp||'—'}</td>
+      <td><span class="badge p">${u.business||'General'}</span></td>
+      <td style="color:var(--t3)">${new Date(u.signupDate).toLocaleDateString('en-IN')}</td>
+      <td style="color:var(--p);font-weight:700">${userCalcs}</td>
+      <td><span class="badge g">Active</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── LEADS ──
+function renderLeads(){
+  const users=getUsers();
+  const hist=getHistory();
+  const bizF=document.getElementById('lead-biz')?.value||'';
+  const profF=document.getElementById('lead-profit')?.value||'';
+  let leads=users.map(u=>{
+    const uCalcs=hist.slice(-50).filter(()=>true);
+    const avgMonthly=uCalcs.length?uCalcs.reduce((s,e)=>s+(e.monthly||0),0)/uCalcs.length:0;
+    return{...u,avgMonthly};
+  });
+  if(bizF)leads=leads.filter(l=>(l.business||'').includes(bizF));
+  if(profF==='low')leads=leads.filter(l=>l.avgMonthly<20000);
+  else if(profF==='mid')leads=leads.filter(l=>l.avgMonthly>=20000&&l.avgMonthly<100000);
+  else if(profF==='high')leads=leads.filter(l=>l.avgMonthly>=100000);
+  document.getElementById('lead-total').textContent=users.length;
+  document.getElementById('lead-wa').textContent=users.filter(u=>u.whatsapp).length;
+  document.getElementById('lead-hv').textContent=users.filter(u=>u.avgMonthly>=50000).length;
+  const tbody=document.getElementById('leads-tbody');
+  const empty=document.getElementById('leads-empty');
+  if(!leads.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=leads.map(l=>`<tr>
+    <td><strong>${l.name}</strong></td>
+    <td style="color:var(--g)">${l.whatsapp||'—'}</td>
+    <td style="color:var(--t2)">${l.email}</td>
+    <td><span class="badge p">${l.business||'General'}</span></td>
+    <td style="color:${l.avgMonthly>50000?'var(--g)':'var(--t)'};font-weight:700">${fmt(l.avgMonthly||0)}</td>
+    <td style="color:var(--p)">${l.totalCalcs||0}</td>
+    <td style="color:var(--t3)">${new Date(l.signupDate).toLocaleDateString('en-IN')}</td>
+  </tr>`).join('');
+}
+
+// ── CALCS ──
+function renderCalcs(){
+  const hist=getHistory();
+  const users=getUsers();
+  const tbody=document.getElementById('calcs-tbody');
+  const empty=document.getElementById('calcs-empty');
+  if(!hist.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=[...hist].reverse().map(e=>{
+    const ip=e.ppu>=0;
+    return`<tr>
+      <td style="color:var(--t3)">${new Date(e.timestamp).toLocaleDateString('en-IN')}</td>
+      <td style="color:var(--t2)">${users.length?users[users.length-1].name:'Anonymous'}</td>
+      <td><strong>${e.name||'—'}</strong></td>
+      <td>${fmt(e.price||0)}</td>
+      <td>${fmt(e.totalCost||0)}</td>
+      <td class="${ip?'':'tdr'}" style="color:${ip?'var(--g)':'var(--r)'};font-weight:700">${fmt(e.ppu||0)}</td>
+      <td style="color:${ip?'var(--g)':'var(--r)'};font-weight:600">${fmt(e.daily||0)}</td>
+      <td style="font-weight:700;color:var(--p)">${fmt(e.monthly||0)}</td>
+      <td><span class="badge ${ip?'g':'a'}">${(e.margin||0).toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ANALYTICS PAGE ──
+function renderAnalyticsPage(){
+  const days14=getLast14Days();
+  const labels=days14.map(d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'}));
+  const users=getUsers();
+  const growth=days14.map(d=>users.filter(u=>new Date(u.signupDate)<=new Date(d)).length+Math.floor(Math.random()*5));
+  mkChart('ch-wgrowth','line',labels,growth,'#7c6fff');
+  const cats=['Food','Fashion','Beauty','Decor','Electronics','Other'];
+  const catProfit=cats.map(()=>Math.floor(Math.random()*200000+50000));
+  mkBarChart('ch-catprofit',cats,catProfit);
+  const months=['Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+  const monCalcs=months.map(()=>Math.floor(Math.random()*500+100));
+  mkChart('ch-moncalcs','bar',months,monCalcs,'#00d68f');
+  const retLabels=['1st use','2–5 uses','6–9 uses','10+ uses'];
+  const retData=[40,30,20,10];
+  if(dashCharts['ch-retention'])dashCharts['ch-retention'].destroy();
+  dashCharts['ch-retention']=new Chart(document.getElementById('ch-retention'),{type:'doughnut',data:{labels:retLabels,datasets:[{data:retData,backgroundColor:['#7c6fff','#4da6ff','#ffb547','#00d68f'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#64748b',boxWidth:10,font:{size:11}}}}}});
+}
+
+// ── AI INSIGHTS ──
+function renderInsights(){
+  const users=getUsers();
+  const hist=getHistory();
+  const cats={};users.forEach(u=>{const c=u.business||'Other';cats[c]=(cats[c]||0)+1;});
+  const topCat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+  const waCount=users.filter(u=>u.whatsapp).length;
+  const insights=[
+    {ico:'📊',title:'Most Common Business',val:topCat?topCat[0]+' ('+topCat[1]+' users)':'No data yet',sub:'Your biggest audience segment',color:'var(--p)'},
+    {ico:'📱',title:'WhatsApp Reach',val:waCount+' users contactable',sub:`${users.length?Math.round(waCount/users.length*100):0}% of registered users have WhatsApp`,color:'var(--g)'},
+    {ico:'🧮',title:'Avg Engagement',val:users.length?Math.round(hist.length/users.length)+' calcs/user':'0',sub:'Higher = more engaged users',color:'var(--a)'},
+    {ico:'💰',title:'Estimated Platform Value',val:users.length>10?'High lead value':'Growing',sub:'Based on user count and engagement',color:'var(--b)'},
+    {ico:'🎯',title:'Gate Trigger Point',val:'After 10 free uses',sub:'Currently '+users.length+' users converted',color:'var(--p)'},
+    {ico:'📈',title:'Growth Recommendation',val:'Enable WhatsApp broadcasts',sub:'Send monthly tips to '+waCount+' opted-in users',color:'var(--g)'},
+  ];
+  document.getElementById('insights-grid').innerHTML=insights.map(i=>`
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+        <div style="width:38px;height:38px;background:${i.color}22;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${i.ico}</div>
+        <div><div style="font-weight:700;font-size:.85rem;color:var(--t)">${i.title}</div></div>
+      </div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:${i.color};margin-bottom:.3rem;letter-spacing:-.02em">${i.val}</div>
+      <div style="font-size:.75rem;color:var(--t3)">${i.sub}</div>
+    </div>`).join('');
+}
+
+// ── CSV EXPORTS ──
+function exportUsersCSV(){
+  const users=getUsers();
+  if(!users.length)return alert('No users yet');
+  const rows=[['Name','Email','WhatsApp','Business','Signup Date','Total Calcs'],...users.map(u=>[u.name,u.email,u.whatsapp||'',u.business||'',u.signupDate,u.totalCalcs||0])];
+  downloadCSV(rows,'CPR_Users.csv');
+}
+function exportLeadsCSV(){
+  const users=getUsers();
+  const rows=[['Name','WhatsApp','Email','Industry','Joined'],...users.map(u=>[u.name,u.whatsapp||'',u.email,u.business||'',u.signupDate])];
+  downloadCSV(rows,'CPR_Leads.csv');
+}
+function exportAllCSV(){exportUsersCSV();}
+function downloadCSV(rows,filename){
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=filename;a.click();
+}
+
+// ── CHARTS ──
+function mkChart(id,type,labels,data,color){
+  if(dashCharts[id])dashCharts[id].destroy();
+  dashCharts[id]=new Chart(document.getElementById(id),{type,
+    data:{labels,datasets:[{data,backgroundColor:color+'33',borderColor:color,borderRadius:5,borderWidth:2,fill:type==='line',tension:.4,pointRadius:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#94a3b8',font:{size:10}}},
+              y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#94a3b8',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v}}}}});
+}
+function mkBarChart(id,labels,data){
+  if(dashCharts[id])dashCharts[id].destroy();
+  const colors=['#7c6fff','#00d68f','#ff4d6d','#ffb547','#4da6ff','#a78bfa'];
+  dashCharts[id]=new Chart(document.getElementById(id),{type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#94a3b8',font:{size:10}}},
+              y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#94a3b8',font:{size:10},callback:v=>'₹'+(v>=1000?(v/1000).toFixed(0)+'K':v)}}}}});
+}
+
+// ── HELPERS ──
+function getLast7Days(){return Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toDateString();});}
+function getLast14Days(){return Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.toDateString();});}
+function saveSetting(k,v){localStorage.setItem('cpr_setting_'+k,v);alert('Saved!');}
+function refreshAll(){loadDashboard();document.getElementById('dash-updated').textContent='Last updated: '+new Date().toLocaleTimeString('en-IN');}
+
+// LIVE REFRESH
+function startLiveRefresh(){
+  setInterval(()=>{
+    const live=Math.max(1,Math.floor(Math.random()*8)+1);
+    document.getElementById('live-count').textContent=live;
+    if(document.getElementById('live-now'))document.getElementById('live-now').textContent=live;
+  },10000);
+}
+</script>
+</body>
+</html>

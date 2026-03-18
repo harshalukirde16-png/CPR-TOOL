@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profit Calculator — Business Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #252535;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --green: #00b894;
+    --red: #d63031;
+    --amber: #fdcb6e;
+    --text: #f0f0f5;
+    --muted: #888899;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+
+  /* HEADER */
+  .header { padding: 2rem 2rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
+  .logo { font-family: var(--font-head); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
+  .logo span { color: var(--accent); }
+  .badge { font-size: 0.65rem; background: var(--accent); color: white; padding: 3px 8px; border-radius: 20px; font-weight: 600; letter-spacing: 0.05em; margin-left: auto; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 2rem; overflow-x: auto; }
+  .tab { font-family: var(--font-head); font-size: 0.85rem; font-weight: 600; padding: 1rem 1.5rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--text); }
+
+  /* PANELS */
+  .panel { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* GRID */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  @media(max-width:700px) { .grid2,.grid3 { grid-template-columns: 1fr; } }
+
+  /* CARD */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; }
+  .card-title { font-family: var(--font-head); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem; }
+
+  /* INPUTS */
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 500; }
+  .field input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.65rem 1rem; color: var(--text); font-family: var(--font-body); font-size: 0.95rem; transition: border-color 0.2s; }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .field .prefix { position: relative; }
+  .field .prefix::before { content: '₹'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; }
+  .field .prefix input { padding-left: 1.8rem; }
+
+  /* BUTTON */
+  .btn { font-family: var(--font-head); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.03em; padding: 0.8rem 1.5rem; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: white; width: 100%; margin-top: 0.5rem; font-size: 1rem; padding: 1rem; }
+  .btn-primary:hover { background: #5a4bd1; transform: translateY(-1px); }
+  .btn-sm { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 0.8rem; padding: 0.5rem 1rem; }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #00a381; }
+
+  /* RESULTS */
+  .result-big { text-align: center; padding: 1.5rem; }
+  .result-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem; }
+  .result-value { font-family: var(--font-head); font-size: 2rem; font-weight: 800; }
+  .result-value.profit { color: var(--green); }
+  .result-value.loss { color: var(--red); }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .key { color: var(--muted); }
+  .stat-row .val { font-weight: 600; font-family: var(--font-head); }
+
+  .status-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.2rem; border-radius: 50px; font-family: var(--font-head); font-weight: 700; font-size: 0.9rem; margin: 1rem auto; display: flex; justify-content: center; }
+  .status-badge.profit { background: rgba(0,184,148,0.15); color: var(--green); border: 1px solid rgba(0,184,148,0.3); }
+  .status-badge.loss { background: rgba(214,48,49,0.15); color: var(--red); border: 1px solid rgba(214,48,49,0.3); }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.green { background: var(--green); }
+  .dot.red { background: var(--red); }
+
+  /* INSIGHTS BOX */
+  .insight { background: var(--surface); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 0.75rem 1rem; margin: 0.5rem 0; font-size: 0.85rem; color: var(--muted); }
+  .insight strong { color: var(--text); }
+
+  /* HISTORY TABLE */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; padding: 0.6rem 1rem; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:hover td { background: var(--surface); }
+  td.green { color: var(--green); font-weight: 600; }
+  td.red { color: var(--red); font-weight: 600; }
+
+  /* FILTER PILLS */
+  .pills { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .pill { font-family: var(--font-head); font-size: 0.78rem; font-weight: 600; padding: 0.4rem 1rem; border-radius: 50px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* CHART CONTAINER */
+  .chart-wrap { position: relative; height: 220px; margin-top: 1rem; }
+
+  /* SHAREABLE CARD */
+  #report-card { background: linear-gradient(135deg, #0f0f1a 0%, #1a1030 100%); border: 1px solid rgba(108,92,231,0.4); border-radius: 20px; padding: 2rem; max-width: 420px; margin: 1.5rem auto; position: relative; overflow: hidden; }
+  #report-card::before { content: ''; position: absolute; top: -60px; right: -60px; width: 180px; height: 180px; background: rgba(108,92,231,0.15); border-radius: 50%; }
+  #report-card::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 120px; height: 120px; background: rgba(0,206,201,0.1); border-radius: 50%; }
+  .rc-brand { font-family: var(--font-head); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem; }
+  .rc-title { font-family: var(--font-head); font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .rc-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .rc-divider { height: 1px; background: linear-gradient(90deg, var(--accent), transparent); margin: 1rem 0; }
+  .rc-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; }
+  .rc-row .lbl { font-size: 0.82rem; color: var(--muted); }
+  .rc-row .val { font-family: var(--font-head); font-weight: 700; font-size: 0.95rem; }
+  .rc-big { text-align: center; padding: 1rem 0; }
+  .rc-big .lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .rc-big .num { font-family: var(--font-head); font-size: 2.5rem; font-weight: 800; color: var(--green); line-height: 1.1; }
+  .rc-score { background: rgba(108,92,231,0.15); border: 1px solid rgba(108,92,231,0.3); border-radius: 12px; padding: 0.8rem; text-align: center; margin: 1rem 0; }
+  .rc-score .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .rc-score .score { font-family: var(--font-head); font-size: 2rem; font-weight: 800; color: var(--amber); }
+  .rc-footer { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 1.2rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  .rc-footer span { color: var(--accent); }
+  .rc-status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 50px; font-family: var(--font-head); font-size: 0.8rem; font-weight: 700; margin: 0.5rem 0; }
+  .rc-status.p { background: rgba(0,184,148,0.2); color: #00e6c3; border: 1px solid rgba(0,184,148,0.3); }
+  .rc-status.l { background: rgba(214,48,49,0.2); color: #ff6b6b; border: 1px solid rgba(214,48,49,0.3); }
+
+  .share-btns { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
+  .share-btn { font-family: var(--font-head); font-weight: 700; font-size: 0.82rem; padding: 0.65rem 1.25rem; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+  .share-btn:hover { transform: translateY(-2px); }
+  .sb-wa { background: #25D366; color: white; }
+  .sb-ig { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; }
+  .sb-dl { background: var(--accent); color: white; }
+  .sb-copy { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+
+  /* SCORE METER */
+  .score-arc { text-align: center; margin: 1rem 0; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 3rem; color: var(--muted); }
+  .empty h3 { font-family: var(--font-head); font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text); }
+
+  /* METRIC CARDS */
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; }
+  .metric .lbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .metric .num { font-family: var(--font-head); font-size: 1.4rem; font-weight: 700; }
+  .metric .chg { font-size: 0.78rem; margin-top: 2px; }
+  .chg.up { color: var(--green); }
+  .chg.dn { color: var(--red); }
+
+  /* SECTION TITLE */
+  .sec-title { font-family: var(--font-head); font-size: 1.5rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .sec-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--accent); color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-family: var(--font-head); font-weight: 600; font-size: 0.85rem; transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 9999; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Profit<span>Calc</span></div>
+  <div class="badge">BUSINESS TRACKER</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('calc')">📊 Calculator</div>
+  <div class="tab" onclick="switchTab('history')">📋 History</div>
+  <div class="tab" onclick="switchTab('analytics')">📈 Analytics</div>
+  <div class="tab" onclick="switchTab('share')">🚀 Share Report</div>
+</div>
+
+<!-- ============ CALCULATOR TAB ============ -->
+<div class="panel active" id="tab-calc">
+  <div class="grid2">
+    <div>
+      <div class="sec-title">Calculate Profit</div>
+      <div class="sec-sub">Enter your business numbers below</div>
+
+      <div class="card">
+        <div class="card-title">Cost Inputs</div>
+        <div class="grid2">
+          <div class="field"><label>Product Cost</label><div class="prefix"><input type="number" id="i-product" placeholder="0" value="50"></div></div>
+          <div class="field"><label>Transport Cost</label><div class="prefix"><input type="number" id="i-transport" placeholder="0" value="10"></div></div>
+          <div class="field"><label>Packaging Cost</label><div class="prefix"><input type="number" id="i-packaging" placeholder="0" value="5"></div></div>
+          <div class="field"><label>Labour Cost</label><div class="prefix"><input type="number" id="i-labour" placeholder="0" value="8"></div></div>
+          <div class="field" style="grid-column:span 2"><label>Other Expenses</label><div class="prefix"><input type="number" id="i-other" placeholder="0" value="2"></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1rem">
+        <div class="card-title">Sales Inputs</div>
+        <div class="grid2">
+          <div class="field"><label>Selling Price / Unit</label><div class="prefix"><input type="number" id="i-price" placeholder="0" value="100"></div></div>
+          <div class="field"><label>Units Sold / Day</label><input type="number" id="i-units" placeholder="0" value="200"></div>
+        </div>
+        <div class="field"><label>Business / Product Name (optional)</label><input type="text" id="i-name" placeholder="My Business"></div>
+        <button class="btn btn-primary" onclick="calculate()">Calculate Profit →</button>
+      </div>
+    </div>
+
+    <div id="results-col" style="display:none">
+      <div class="sec-title">Results</div>
+      <div class="sec-sub" id="res-time"></div>
+
+      <div id="status-area"></div>
+
+      <div class="card">
+        <div class="card-title">Profit Breakdown</div>
+        <div class="result-big">
+          <div class="result-label">Monthly Profit</div>
+          <div class="result-value" id="r-monthly">—</div>
+        </div>
+        <div class="stat-row"><span class="key">Total Cost / Unit</span><span class="val" id="r-cost">—</span></div>
+        <div class="stat-row"><span class="key">Profit / Unit</span><span class="val" id="r-ppu">—</span></div>
+        <div class="stat-row"><span class="key">Profit Margin</span><span class="val" id="r-margin">—</span></div>
+        <div class="stat-row"><span class="key">Daily Profit</span><span class="val" id="r-daily">—</span></div>
+        <div class="stat-row"><span class="key">Monthly Profit</span><span class="val" id="r-monthly2">—</span></div>
+        <div class="stat-row"><span class="key">Yearly Profit</span><span class="val" id="r-yearly">—</span></div>
+      </div>
+
+      <div class="card" style="margin-top:1rem" id="insights-card">
+        <div class="card-title">Smart Insights</div>
+        <div id="insights-area"></div>
+      </div>
+    </div>
+
+    <div id="empty-col" style="grid-column:span 1">
+      <div class="empty" style="margin-top:4rem">
+        <div style="font-size:3rem;margin-bottom:1rem">📊</div>
+        <h3>Enter your numbers</h3>
+        <p>Fill in costs and sales details, then click Calculate</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HISTORY TAB ============ -->
+<div class="panel" id="tab-history">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem">
+    <div>
+      <div class="sec-title">Calculation History</div>
+      <div class="sec-sub">All your saved calculations</div>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="exportExcel()">⬇ Download Excel</button>
+      <button class="btn btn-sm" onclick="clearHistory()" style="color:var(--red);border-color:var(--red)">🗑 Clear All</button>
+    </div>
+  </div>
+
+  <div class="pills">
+    <div class="pill active" onclick="filterHistory('all',this)">All</div>
+    <div class="pill" onclick="filterHistory('today',this)">Today</div>
+    <div class="pill" onclick="filterHistory('7d',this)">Last 7 Days</div>
+    <div class="pill" onclick="filterHistory('30d',this)">Last 30 Days</div>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Business</th>
+            <th>Selling ₹</th>
+            <th>Units</th>
+            <th>Cost/Unit</th>
+            <th>Profit/Unit</th>
+            <th>Daily</th>
+            <th>Monthly</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="history-body">
+        </tbody>
+      </table>
+      <div class="empty" id="history-empty" style="display:none">
+        <h3>No calculations yet</h3>
+        <p>Go to Calculator tab and run your first calculation</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ANALYTICS TAB ============ -->
+<div class="panel" id="tab-analytics">
+  <div class="sec-title">Business Analytics</div>
+  <div class="sec-sub">Visual insights from your calculation history</div>
+
+  <div class="grid3" id="analytics-metrics" style="margin-bottom:1.5rem"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Daily Profit Trend</div>
+      <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Profit vs Total Costs</div>
+      <div class="chart-wrap"><canvas id="chart-comparison"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Profit Margin % Over Time</div>
+      <div class="chart-wrap"><canvas id="chart-margin"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Units Sold per Calculation</div>
+      <div class="chart-wrap"><canvas id="chart-units"></canvas></div>
+    </div>
+  </div>
+
+  <div class="empty" id="analytics-empty" style="display:none;margin-top:2rem">
+    <h3>No data to analyse yet</h3>
+    <p>Add at least 2 calculations to see trends</p>
+  </div>
+</div>
+
+<!-- ============ SHARE TAB ============ -->
+<div class="panel" id="tab-share">
+  <div class="sec-title">Shareable Report Card</div>
+  <div class="sec-sub">Beautiful business report ready to share on Instagram & WhatsApp</div>
+
+  <div id="share-no-data" class="empty">
+    <div style="font-size:3rem;margin-bottom:1rem">🚀</div>
+    <h3>Calculate first to generate your report</h3>
+    <p>Go to Calculator, run a calculation, then come back here</p>
+  </div>
+
+  <div id="share-content" style="display:none">
+    <div id="report-card">
+      <div class="rc-brand">ProfitCalc — Business Tracker</div>
+      <div class="rc-title" id="rc-name">Business Report</div>
+      <div class="rc-sub" id="rc-date"></div>
+
+      <div id="rc-status-area"></div>
+
+      <div class="rc-divider"></div>
+      <div class="rc-row"><span class="lbl">Product Cost</span><span class="val" id="rc-product">—</span></div>
+      <div class="rc-row"><span class="lbl">All Costs / Unit</span><span class="val" id="rc-cost">—</span></div>
+      <div class="rc-row"><span class="lbl">Selling Price</span><span class="val" id="rc-price">—</span></div>
+      <div class="rc-row"><span class="lbl">Units Sold / Day</span><span class="val" id="rc-units">—</span></div>
+      <div class="rc-divider"></div>
+
+      <div class="rc-big">
+        <div class="lbl">Monthly Profit Potential</div>
+        <div class="num" id="rc-monthly">—</div>
+      </div>
+      <div class="rc-row"><span class="lbl">Daily Profit</span><span class="val" id="rc-daily">—</span></div>
+      <div class="rc-row"><span class="lbl">Yearly Profit</span><span class="val" id="rc-yearly">—</span></div>
+      <div class="rc-row"><span class="lbl">Profit Margin</span><span class="val" id="rc-margin">—</span></div>
+
+      <div class="rc-score">
+        <div class="lbl">Entrepreneur Score</div>
+        <div class="score" id="rc-score">—</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:2px" id="rc-score-label">Based on margin & volume</div>
+      </div>
+
+      <div class="rc-footer">
+        Calculate your profit free at <span>ProfitCalc.com</span><br>
+        Built for Indian Entrepreneurs 🇮🇳
+      </div>
+    </div>
+
+    <div class="share-btns">
+      <button class="share-btn sb-wa" onclick="shareWA()">💬 WhatsApp</button>
+      <button class="share-btn sb-ig" onclick="shareIG()">📸 Instagram</button>
+      <button class="share-btn sb-dl" onclick="downloadCard()">⬇ Download Image</button>
+      <button class="share-btn sb-copy" onclick="copyText()">📋 Copy Text</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✓ Calculation saved!</div>
+
+<script>
+const db = {
+  get: () => JSON.parse(localStorage.getItem('pc_history') || '[]'),
+  set: (d) => localStorage.setItem('pc_history', JSON.stringify(d)),
+  add: (entry) => { const d = db.get(); d.push(entry); db.set(d); }
+};
+
+const fmt = v => '₹' + Math.abs(Math.round(v)).toLocaleString('en-IN');
+const fmtN = v => Math.round(v).toLocaleString('en-IN');
+
+let lastCalc = null;
+let charts = {};
+
+function calculate() {
+  const product = +document.getElementById('i-product').value || 0;
+  const transport = +document.getElementById('i-transport').value || 0;
+  const packaging = +document.getElementById('i-packaging').value || 0;
+  const labour = +document.getElementById('i-labour').value || 0;
+  const other = +document.getElementById('i-other').value || 0;
+  const price = +document.getElementById('i-price').value || 0;
+  const units = +document.getElementById('i-units').value || 0;
+  const name = document.getElementById('i-name').value || 'My Business';
+
+  const totalCost = product + transport + packaging + labour + other;
+  const profitPerUnit = price - totalCost;
+  const dailyProfit = profitPerUnit * units;
+  const monthlyProfit = dailyProfit * 30;
+  const yearlyProfit = dailyProfit * 365;
+  const margin = price > 0 ? (profitPerUnit / price * 100) : 0;
+  const isProfit = profitPerUnit >= 0;
+
+  const now = new Date();
+  const entry = {
+    id: Date.now(),
+    timestamp: now.toISOString(),
+    name,
+    product_cost: product, transport_cost: transport, packaging_cost: packaging,
+    labour_cost: labour, other_expenses: other,
+    selling_price: price, units_sold: units,
+    total_cost: totalCost, profit_per_unit: profitPerUnit,
+    daily_profit: dailyProfit, monthly_profit: monthlyProfit,
+    yearly_profit: yearlyProfit, margin
+  };
+
+  db.add(entry);
+  lastCalc = entry;
+
+  // Show results
+  document.getElementById('results-col').style.display = 'block';
+  document.getElementById('empty-col').style.display = 'none';
+  document.getElementById('res-time').textContent = now.toLocaleString('en-IN');
+
+  document.getElementById('r-monthly').textContent = fmt(monthlyProfit);
+  document.getElementById('r-monthly').className = 'result-value ' + (isProfit ? 'profit' : 'loss');
+  document.getElementById('r-cost').textContent = fmt(totalCost);
+  document.getElementById('r-ppu').textContent = fmt(profitPerUnit);
+  document.getElementById('r-margin').textContent = margin.toFixed(1) + '%';
+  document.getElementById('r-daily').textContent = fmt(dailyProfit);
+  document.getElementById('r-monthly2').textContent = fmt(monthlyProfit);
+  document.getElementById('r-yearly').textContent = fmt(yearlyProfit);
+
+  // Status badge
+  const sa = document.getElementById('status-area');
+  sa.innerHTML = `<div class="status-badge ${isProfit ? 'profit' : 'loss'}"><div class="dot ${isProfit ? 'green' : 'red'}"></div>${isProfit ? '🟢 Profitable Business' : '🔴 Loss Warning'}</div>`;
+
+  // Insights
+  const ins = [];
+  if (!isProfit) {
+    ins.push(`<div class="insight">⚠️ <strong>You're losing ₹${Math.abs(Math.round(profitPerUnit))} per unit.</strong> Try reducing expenses or increasing your selling price.</div>`);
+    ins.push(`<div class="insight">💡 To break even, set your price to at least <strong>${fmt(totalCost)}/unit</strong>.</div>`);
+  } else {
+    ins.push(`<div class="insight">✅ You earn <strong>${fmt(profitPerUnit)} per unit</strong> — that's a <strong>${margin.toFixed(1)}% margin</strong>.</div>`);
+    if (margin > 40) ins.push(`<div class="insight">🔥 <strong>Excellent margin!</strong> Above 40% is considered strong for most product businesses.</div>`);
+    else if (margin < 20) ins.push(`<div class="insight">📌 Your margin is below 20%. Consider reducing <strong>transport or packaging costs</strong> for higher profit.</div>`);
+    ins.push(`<div class="insight">📅 If you sell <strong>${fmtN(units)} units/day</strong> consistently, you could make <strong>${fmt(yearlyProfit)} this year</strong>.</div>`);
+  }
+  const largestCost = [['Product',product],['Transport',transport],['Packaging',packaging],['Labour',labour],['Other',other]].sort((a,b)=>b[1]-a[1])[0];
+  if (largestCost[1] > 0) ins.push(`<div class="insight">📦 <strong>${largestCost[0]} cost (${fmt(largestCost[1])})</strong> is your biggest expense per unit.</div>`);
+  document.getElementById('insights-area').innerHTML = ins.join('');
+
+  // Update share card
+  updateShareCard(entry);
+
+  showToast('✓ Calculation saved!');
+}
+
+function updateShareCard(e) {
+  if (!e) return;
+  document.getElementById('share-no-data').style.display = 'none';
+  document.getElementById('share-content').style.display = 'block';
+
+  const isP = e.profit_per_unit >= 0;
+  const d = new Date(e.timestamp);
+  const score = Math.min(10, Math.max(1, ((e.margin / 10) * 0.6 + (Math.min(e.units_sold, 500) / 50))).toFixed(1));
+
+  document.getElementById('rc-name').textContent = (e.name || 'My Business') + ' — Report';
+  document.getElementById('rc-date').textContent = d.toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('rc-status-area').innerHTML = `<div class="rc-status ${isP?'p':'l'}">${isP ? '🟢 PROFITABLE' : '🔴 LOSS'}</div>`;
+  document.getElementById('rc-product').textContent = fmt(e.product_cost);
+  document.getElementById('rc-cost').textContent = fmt(e.total_cost);
+  document.getElementById('rc-price').textContent = fmt(e.selling_price);
+  document.getElementById('rc-units').textContent = fmtN(e.units_sold) + ' units';
+  document.getElementById('rc-monthly').textContent = fmt(e.monthly_profit);
+  document.getElementById('rc-monthly').style.color = isP ? 'var(--green)' : 'var(--red)';
+  document.getElementById('rc-daily').textContent = fmt(e.daily_profit);
+  document.getElementById('rc-yearly').textContent = fmt(e.yearly_profit);
+  document.getElementById('rc-margin').textContent = e.margin.toFixed(1) + '%';
+  document.getElementById('rc-score').textContent = score + ' / 10';
+}
+
+// ---------- HISTORY ----------
+function renderHistory(filter='all') {
+  let data = db.get().reverse();
+  const now = new Date();
+  if (filter === 'today') data = data.filter(e => new Date(e.timestamp).toDateString() === now.toDateString());
+  else if (filter === '7d') data = data.filter(e => (now - new Date(e.timestamp)) < 7*86400000);
+  else if (filter === '30d') data = data.filter(e => (now - new Date(e.timestamp)) < 30*86400000);
+
+  const tbody = document.getElementById('history-body');
+  const empty = document.getElementById('history-empty');
+  if (data.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = data.map(e => {
+    const d = new Date(e.timestamp);
+    const isP = e.profit_per_unit >= 0;
+    return `<tr>
+      <td>${d.toLocaleDateString('en-IN')}<br><small style="color:var(--muted)">${d.toLocaleTimeString('en-IN')}</small></td>
+      <td>${e.name || '—'}</td>
+      <td>${fmt(e.selling_price)}</td>
+      <td>${fmtN(e.units_sold)}</td>
+      <td>${fmt(e.total_cost)}</td>
+      <td class="${isP?'green':'red'}">${fmt(e.profit_per_unit)}</td>
+      <td class="${isP?'green':'red'}">${fmt(e.daily_profit)}</td>
+      <td class="${isP?'green':'red'}">${fmt(e.monthly_profit)}</td>
+      <td><span style="font-size:0.75rem;padding:3px 10px;border-radius:50px;background:${isP?'rgba(0,184,148,0.15)':'rgba(214,48,49,0.15)'};color:${isP?'var(--green)':'var(--red)'}">${isP?'Profit':'Loss'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterHistory(f, el) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory(f);
+}
+
+function clearHistory() {
+  if (confirm('Clear all history?')) { db.set([]); renderHistory(); showToast('History cleared'); }
+}
+
+// ---------- ANALYTICS ----------
+function renderAnalytics() {
+  const data = db.get();
+  const analyticsEmpty = document.getElementById('analytics-empty');
+
+  if (data.length < 1) { analyticsEmpty.style.display = 'block'; document.querySelector('.grid2').style.display = 'none'; return; }
+  analyticsEmpty.style.display = 'none';
+  document.querySelector('.grid2').style.display = 'grid';
+
+  const recent = data.slice(-20);
+  const labels = recent.map(e => new Date(e.timestamp).toLocaleDateString('en-IN', {day:'numeric',month:'short'}));
+  const dailyProfits = recent.map(e => Math.round(e.daily_profit));
+  const costs = recent.map(e => Math.round(e.total_cost * e.units_sold));
+  const revenues = recent.map(e => Math.round(e.selling_price * e.units_sold));
+  const margins = recent.map(e => +e.margin.toFixed(1));
+  const units = recent.map(e => e.units_sold);
+
+  const totalMonthly = data.reduce((s,e) => s + e.monthly_profit, 0) / data.length;
+  const avgMargin = data.reduce((s,e) => s + e.margin, 0) / data.length;
+  const maxDaily = Math.max(...data.map(e => e.daily_profit));
+
+  const mc = document.getElementById('analytics-metrics');
+  mc.innerHTML = `
+    <div class="metric"><div class="lbl">Avg Monthly Profit</div><div class="num" style="color:var(--green)">${fmt(totalMonthly)}</div></div>
+    <div class="metric"><div class="lbl">Avg Profit Margin</div><div class="num" style="color:var(--accent)">${avgMargin.toFixed(1)}%</div></div>
+    <div class="metric"><div class="lbl">Best Daily Profit</div><div class="num" style="color:var(--amber)">${fmt(maxDaily)}</div></div>
+  `;
+
+  destroyChart('chart-daily');
+  destroyChart('chart-comparison');
+  destroyChart('chart-margin');
+  destroyChart('chart-units');
+
+  charts['chart-daily'] = new Chart(document.getElementById('chart-daily'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Daily Profit', data: dailyProfits, borderColor: '#6c5ce7', backgroundColor: 'rgba(108,92,231,0.1)', fill: true, tension: 0.4, pointRadius: 3 }] },
+    options: chartOpts('₹')
+  });
+
+  charts['chart-comparison'] = new Chart(document.getElementById('chart-comparison'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Revenue', data: revenues, backgroundColor: 'rgba(0,206,201,0.7)', borderRadius: 4 },
+      { label: 'Costs', data: costs, backgroundColor: 'rgba(214,48,49,0.6)', borderRadius: 4 }
+    ]},
+    options: chartOpts('₹')
+  });
+
+  charts['chart-margin'] = new Chart(document.getElementById('chart-margin'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Margin %', data: margins, borderColor: '#00b894', backgroundColor: 'rgba(0,184,148,0.1)', fill: true, tension: 0.4, pointRadius: 3 }] },
+    options: chartOpts('%')
+  });
+
+  charts['chart-units'] = new Chart(document.getElementById('chart-units'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Units Sold', data: units, backgroundColor: 'rgba(253,203,110,0.7)', borderRadius: 4 }] },
+    options: chartOpts('')
+  });
+}
+
+function chartOpts(suffix) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', font: { size: 10 }, maxTicksLimit: 8 } },
+      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', font: { size: 10 }, callback: v => suffix === '₹' ? '₹' + (v>=1e5?(v/1e5).toFixed(1)+'L':v>=1000?(v/1000).toFixed(0)+'K':v) : v + suffix } }
+    }
+  };
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ---------- EXCEL EXPORT ----------
+function exportExcel() {
+  const data = db.get();
+  if (!data.length) { showToast('No data to export'); return; }
+  const rows = [['Date','Time','Business','Product Cost','Transport','Packaging','Labour','Other','Selling Price','Units Sold','Total Cost','Profit/Unit','Daily Profit','Monthly Profit','Yearly Profit','Margin %']];
+  data.forEach(e => {
+    const d = new Date(e.timestamp);
+    rows.push([d.toLocaleDateString('en-IN'), d.toLocaleTimeString('en-IN'), e.name||'—', e.product_cost, e.transport_cost, e.packaging_cost, e.labour_cost, e.other_expenses, e.selling_price, e.units_sold, e.total_cost, e.profit_per_unit, e.daily_profit, e.monthly_profit, e.yearly_profit, +e.margin.toFixed(1)]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = rows[0].map(() => ({wch:16}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Profit History');
+  XLSX.writeFile(wb, 'ProfitCalc_History.xlsx');
+  showToast('Excel downloaded!');
+}
+
+// ---------- SHARING ----------
+function shareWA() {
+  if (!lastCalc) return;
+  const e = lastCalc;
+  const txt = encodeURIComponent(`📊 *My Business Profit Report*\n\n💰 Monthly Profit: ₹${fmtN(e.monthly_profit)}\n📦 Selling Price: ₹${fmtN(e.selling_price)}/unit\n📈 Daily Profit: ₹${fmtN(e.daily_profit)}\n🎯 Profit Margin: ${e.margin.toFixed(1)}%\n\nCalculate your business profit free 👇\nProfitCalc.com`);
+  window.open('https://wa.me/?text=' + txt, '_blank');
+}
+
+function shareIG() {
+  downloadCard();
+  showToast('Image downloaded — share on Instagram!');
+}
+
+function downloadCard() {
+  const card = document.getElementById('report-card');
+  html2canvas(card, { backgroundColor: null, scale: 2, useCORS: true }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'ProfitReport.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+  showToast('Downloading report image...');
+}
+
+function copyText() {
+  if (!lastCalc) return;
+  const e = lastCalc;
+  const txt = `📊 My Business Profit Report\n\nProduct: ${e.name||'Business'}\n💰 Monthly Profit: ₹${fmtN(e.monthly_profit)}\n📦 Selling Price: ₹${fmtN(e.selling_price)}\n📈 Daily Profit: ₹${fmtN(e.daily_profit)}\n🎯 Profit Margin: ${e.margin.toFixed(1)}%\n\nCalculate your profit at ProfitCalc.com`;
+  navigator.clipboard.writeText(txt).then(() => showToast('Caption copied!'));
+}
+
+// ---------- TABS ----------
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['calc','history','analytics','share'][i] === id));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'history') renderHistory();
+  if (id === 'analytics') renderAnalytics();
+  if (id === 'share' && lastCalc) updateShareCard(lastCalc);
+  else if (id === 'share' && !lastCalc) { const latest = db.get().slice(-1)[0]; if (latest) { lastCalc = latest; updateShareCard(latest); } }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Load latest calc on boot
+window.onload = () => {
+  const latest = db.get().slice(-1)[0];
+  if (latest) lastCalc = latest;
+};
+</script>
+</body>
+</html>
